@@ -1,0 +1,327 @@
+\documentclass[12pt]{article}
+%\usepackage[utf8]{inputenc} %Paquete para poder poner acentos desde el teclado. No lo necesitamos con XeLaTeX si usamos \usepackage{fontspec}
+\usepackage{fontspec} %Paquete de fuentes avanzado (sólo XeLaTeX)
+\usepackage{fancyvrb} % Paquete para dar más opciones a Verbatim
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% FUENTES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%\usepackage{mathptmx} %Times New Roman
+%\setmainfont{Arial} %Arial. Sólo XeLaTeX
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PAQUETES BÁSICOS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%\usepackage[spanish]{babel} %Paquete para que el documento esté en español. Quitar "spanish" para tener el índice en inglés
+\usepackage{polyglossia} %Paquete igual que "babel" pero para XeLaTex. Permite eliminar la primera sangría con otro comando (ver sección "Distancias").
+\setmainlanguage{spanish} %Lenguaje del texto cuando usas polyglossia
+\usepackage{eurosym} %Paquete para poder meter el símbolo €
+\usepackage{amsmath} %Paquete básico para matemáticas
+\usepackage{graphicx} %Paquete para incluir imágenes
+\usepackage{hyperref} %Paquete para poder poner hipervínculos
+\hypersetup{
+    colorlinks=true,
+    linkcolor=cyan,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Hoja problemas 1 - Alonso, de la Llave y Huélamo},
+    bookmarksopen=true,
+    citecolor=RawSienna,
+} %Opciones de los hipervínculos y cross references.
+\usepackage{cleveref} %Paquete para mejorar las referencias cruzadas.
+\usepackage{enumerate} %Paquete para cambiar los números en las listas numeradas
+\usepackage[shortlabels]{enumitem} %Paquete para modificar las listas
+\usepackage{multicol} %Paquete para crear multicolumnas
+\usepackage{parskip} %Paquete para que se espacien los párrafos
+\usepackage{array} %Paquete para dar mejor formato a las tablas
+\usepackage{rotating} %Paquete para poder rotar tablas
+\usepackage{float} %Paquete para colocar mejor las imágenes
+\usepackage{csquotes} %Paquete para mejorar la edición de citas
+\usepackage[nottoc]{tocbibind} %Paquete para añadir la bibliografía y otros elementos a la table of contents. nottoc = Not Table of Contents. Se puede poner notbib, notindex, etc.
+\usepackage{epigraph} %Paquete para poder poner epígrafes
+\usepackage{dirtytalk} %Paquete para poner citas usando \say{}
+\usepackage[normalem]{ulem} %Paquete para subrayar (underline); normalem se usa para que no sutituya las itálicas por subrayados para enfatizar.
+\useunder{\uline}{\ul}{} %Para personalizar el subrayado.
+\usepackage{lscape} %Paquete para poder rotar páginas.
+\usepackage{geometry}%Paquete para modificar los márgenes de manera más avanzada.
+\usepackage{cancel} %Paquete para cancelar (tachar) elementos 
+\usepackage[dvipsnames]{xcolor} %Paquete para aumentar las opciones de cambiar colores.
+\usepackage{unicode-math} %Paquete para implementar unicode maths. Por ejemplo, para la epsilon mayúscula, \Eulerconst, necesita este paquete.
+\usepackage[stable]{footmisc} %Paquete para dar más opciones en los footnote. Stable para poder poner footnotes en las cabeceras de las secciones y subsecciones.
+\usepackage{optidef} %Paquete para problemas de optimización con \begin{mini/maxi}
+\usepackage{pdfpages} %Paquete para incluir páginas de PDF en el documento.
+\usepackage{bibentry} %Paquete para no incluir la sección bibliografía usando \nobibliography{name.bib} pero seguir citando
+\usepackage{verbatim} %Paquete para hacer más cosas con verbatim
+\usepackage{listings} %Paquete para teclear código de programación.
+\usepackage{graphicx,accents} %Paquete para poner flechas de vectores hacia detrás.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MATLAB %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
+\definecolor{mygreen}{RGB}{0,133,0} % color values Red, Green, Blue
+\definecolor{mylilas}{RGB}{170,55,241}
+
+\lstset{language=Matlab,%
+    %basicstyle=\color{red},
+    breaklines=true,%
+    morekeywords={matlab2tikz},
+    keywordstyle=\color{blue},%
+    morekeywords=[2]{1}, keywordstyle=[2]{\color{black}},
+    identifierstyle=\color{black},%
+    stringstyle=\color{mylilas},
+    commentstyle=\color{mygreen},%
+    showstringspaces=false,%without this there will be a symbol in the places where there is a space
+    numbers=left,%
+    numberstyle={\tiny \color{black}},% size of the numbers
+    numbersep=9pt, % this defines how far the numbers are from the text
+    emph=[1]{for,end,break},emphstyle=[1]\color{blue}, %some words to emphasise
+    %emph=[2]{word1,word2}, emphstyle=[2]{style},
+}
+
+\usepackage[framed,numbered,autolinebreaks,useliterate]{mcode} % Paquete para cargar código de MATLAB. Arrastrar el fichero .sty, pues está modificado para corregir el error de la virgulilla (~).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% BIBLIOGRAFÍA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\usepackage{natbib}
+\bibliographystyle{agsm} %Formato Harvard
+\setcitestyle{authoryear-ibid,open={(},close={)}} 
+
+\providecommand{\abs}[1]{\lvert#1\rvert}
+\providecommand{\norm}[1]{\lVert#1\rVert}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMBIOS DISTANCIAS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\geometry{
+ a4paper,
+ left=25mm,
+ right=25mm,
+ top=25mm,
+ bottom=25mm,
+ heightrounded, % Ensures the height is adjusted so that an integer number of lines are accommodated in the text block.
+ } 
+\setlength{\parskip}{0cm} %Distancia entre párrafos. El plus y minus es el margen que le das a LaTeX para modificar el espaciado si lo considera necesario
+\setlength{\parindent}{0.4cm} %Sangría
+\renewcommand{\baselinestretch}{1} %Espaciado entre líneas. Por defecto es 1.
+\PolyglossiaSetup{spanish}{indentfirst=false}
+\setlist[1]{labelindent=\parindent} %Las listas tienen la sangría del texto (sólo el primer nivel, por eso creo otro \setlist general.
+\setlist{
+topsep=8pt, %Espacio entre el item y el párrafo
+itemsep=4pt, %Espacio entre items
+partopsep=4pt, 
+parsep=4pt %Espacio entre párrafos
+} %Para controlar los espacios dentro de una lista.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% NUEVOS COMANDOS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Keywords command.
+\providecommand{\keywords}[1]
+{
+  \small	
+  \textbf{\textit{Palabras clave:}} #1
+}
+
+% id est.
+\providecommand{\ie}
+{
+\textit{i.e.}
+}
+
+%Fuente dentro del caption en las figuras.
+\newcommand*{\captionsource}[2]{%
+  \caption[{#1}]{%
+    #1%
+    \\\hspace{\linewidth}%
+    \textbf{Fuente:} #2%
+  }%
+}
+
+% Comando para subrayar términos.
+\newcommand{\highlight}[1]{%
+  \colorbox{yellow}{$\displaystyle#1$}}
+  
+% Comandos para hacer límites inferiores y superiores (barra arriba/abajo)
+\DeclareMathOperator*\lowlim{\underline{lim}}
+\DeclareMathOperator*\uplim{\overline{lim}}
+
+% Comando para poner valores absolutos
+\providecommand{\abs}[1]{\lvert#1\rvert}
+
+\addto{\captionsspanish}{\renewcommand{\refname}{Bibliografía}} %Para cambiar el nombre de la bibliogradía usando el paquete "babel". "refname" para "article", "bibname" para "book" o "report". Si no usas babel, con \renewcommand{\bibname}{Bibliografía} es suficiente.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OTROS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\numberwithin{equation}{section} %Para enumerar las ecuaciones por sección.
+\setcounter{secnumdepth}{0} %Para que párrafos y subpárrafos cuenten como secciones en el índice, nivel de profundidad 4 y 5 respectivamente. 0 Para que no se numere el índice.
+\setcounter{tocdepth}{3} %Nivel de profundidad de la Table Of Contents
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\VerbatimFootnotes % Para poner verbatim en los pie de página.
+
+\renewcommand*{\thefootnote}{\fnsymbol{footnote}} %Comando para poner símbolos sobre el nombre del autor
+
+
+\begin{titlepage} %
+
+	\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for horizontal lines, change thickness here
+	
+	\center % Centre everything on the page
+	
+	%------------------------------------------------
+	%	Headings
+	%------------------------------------------------
+	
+	%\includegraphics[width=\textwidth]{Images/spain.jpg}\\[1cm]
+	
+	%\textsc{\LARGE Universidad de Valencia}\\[1.5cm] % Main heading such as the name of your university/college
+	
+	%\textsc{\Large Facultad de Economía}\\[0.5cm] % Major heading such as course name
+	
+	%\textsc{\large Minor Heading}\\[0.5cm] % Minor heading such as course title
+	
+	%------------------------------------------------
+	%	Title
+	%------------------------------------------------
+	
+	\HRule\\[0.4cm]
+	
+	{\Huge\bfseries Econometría financiera\\
+	Hoja de problemas nº 1
+	}\\[0.4cm] % Title of your document
+	
+	\HRule\\[1.5cm]
+	
+	\vfill
+	%------------------------------------------------
+	%	Author(s)
+	%------------------------------------------------
+	\begin{multicols}{2}
+	%\begin{minipage}{0.4\textwidth}
+		%\begin{flushleft}
+			\large
+			\textit{Alumnos}\\
+			Carlos \textsc{Alonso}\footnote{@ucm.es}\\
+			Manuel \textsc{de la Llave}\footnote{manudela@ucm.es}\\
+			Diego \textsc{Huélamo}\footnote{@ucm.es}\\
+		%\end{flushleft}
+	%\end{minipage}
+	\columnbreak
+	%\begin{minipage}{0.4\textwidth}
+		%\begin{flushright}
+			\large
+			\textit{Profesor}\\
+			Jesús \textsc{Ruiz} % Supervisor's name
+		%\end{flushright}
+	%\end{minipage}
+	\end{multicols}
+	% If you don't want a supervisor, uncomment the two lines below and comment the code above
+	%{\large\textit{Author}}\\
+	%John \textsc{Smith} % Your name
+	
+	%------------------------------------------------
+	%	Date
+	%------------------------------------------------
+	
+	\vfill\vfill\vfill % Position the date 3/4 down the remaining page
+	
+	{\large \today} % Date, change the \today to a set date if you want to be precise
+	
+	%------------------------------------------------
+	%	Logo
+	%------------------------------------------------
+	
+	%\vfill\vfill
+	%\includegraphics[width=0.2\textwidth]{logouv.png}\\[1cm] % Include a department/university logo - this will require the graphicx package
+	 
+	%----------------------------------------------------------------------------------------
+	
+	\vfill % Push the date up 1/4 of the remaining page
+	
+\end{titlepage}
+
+\clearpage
+\tableofcontents
+\clearpage
+
+\setcounter{footnote}{0} %Para que la página del título no cuente como página a la hora de numerar.
+\renewcommand*{\thefootnote}{\arabic{footnote}} %Para que las notas al pie vuelvan a ser 1, 2, 3, etc. y no el símbolo como en el autor.
+
+
+\section{Ejercicio 1}
+
+\textbf{Caracterización de propiedades de un estadístico mediante simulación.}
+
+El contraste de Normalidad de Bera-Jarque especifica que el estadístico $JB = \frac{T}{6}\big(S^2 + \frac{1}{4}(K-3)^2\big)$ se distribuye asintóticamente como una chi-cuadrado con 2 grados de libertad, bajo la hipótesis nula de que los datos son extracciones independientes de una población Normal con esperanza matemática y varianza desconocidas. En la expresión anterior, $S$ denota el coeficiente de asimetría y $K$ denota el coeficiente de curtosis, mientras que $T$ es el tamaño muestral. Este ejercicio consiste en comparar el tamaño (o probabilidad de cometer error de tipo I) y la potencia del contraste empíricos con sus valores teóricos. 
+
+\begin{itemize}
+    \item Simule un elevado número de muestras de tamaño $T = 20$ de una población Normal con determinada esperanza y varianza que debe fijar de antemano. Puede elegir cualquier par de valores, pero manténgalos fijos para todas las muestras. Escoja un nivel de significación del 1\%, y calcule el porcentaje de veces que rechaza la hipótesis nula. Este número es una estimación del tamaño del contraste, por lo que debería aproximarse a 0,01; sin embargo, el hecho de que la muestra sea corta, hará que la aproximación sea imperfecta. 
+    
+    \item Repita el ejercicio con las mismas muestras, para niveles de significación del 5\% y del 10\%.
+    
+    \item Repita el ejercicio con muestras de tamaño $T = 50$ y $T = 100$.
+    
+    \item Construya una tabla que resuma todos los tamaños empíricos que ha obtenido en este ejercicio, y examine en qué grado se separan de sus valores teóricos.
+    
+    \item Para contrastar potencia, hemos de simular distribuciones no Normales. Diseñe un ejercicio extrayendo muestras de una población no Normal. Y calcule la potencia para los mismos casos de antes: nivel de significación del 1\%, 5\% y 10\%, y tamaños muestrales $T = 20, 50, 100$.
+\end{itemize}
+
+\section{Ejercicio 2}
+
+\textbf{Predicción de precios y de rentabilidades}
+
+Considere series temporales de precios de tres activos de distinta naturaleza (puede obtenerlas del archivo \textit{Datos financieros.xls}). Omita las últimas $N$ observaciones muestrales (usted elige el valor de $N$) y estime un modelo para cada uno de los tres activos. Utilice dicho modelo para predecir la rentabilidad del activo un periodo hacia adelante. ¿Entiende la diferencia que existe en su procedimiento frente a predecir los $N$ días desde $T-N$ (siendo $T$ el tamaño de la muestra)? Calcule estadísticos de bondad de la predicción (sección 1.4.4 en Series temporales.pdf).  
+
+Repita el ejercicio utilizando directamente los precios de los activos. ¿Es muy diferente calcular los estadísticos de bondad de predicción en precios o en rentabilidades? ¿Qué cálculo cree que debería hacer?
+
+\section{Ejercicio 3}
+
+\textbf{Utilización de las predicciones}
+
+\begin{enumerate}[a)]
+    \item Suponga un fondo de inversión cuyo rendimiento mensual anualizado sigue el siguiente proceso estocástico:
+    
+    \[
+    r_t = 0.01 + 0.9r_{t-1} + \varepsilon_t, \, \hat{\sigma}_\varepsilon^2 = 0.0004
+    \]
+    periodicidad mensual y rendimientos en tantos por 1
+    
+    Si tiene invertido 10 000 euros, dentro de tres meses, al 99\% de confianza, ¿cuál será la pérdida esperada?. Suponga que el rendimiento en el mes actual ha sido 2 puntos porcentuales por encima de su valor esperado incondicional.
+    
+    \item A partir de los datos del IBEX que se encuentran en la hoja de cálculo \textit{ibex.xlsx}, especificar y estimar un modelo ARIMA. Después estime a partir de la distribución de las predicciones y mediante simulación, la probabilidad de que cierre el año con una ganancia respecto de la situación actual.
+    
+    \item Descargue los datos del PIB de USA de la página web de la Reserva Federal de St Louis (\url{https://fred.stlouisfed.org/series/GDPC1}). Ésta es una serie trimestral desestacionalizada en términos reales. Identifique y estime un modelo ARIMA para el PIB de Estados Unidos hasta el segundo trimestre de 2019. Estime, dado su modelo, con qué probabilidad el crecimiento del PIB será menor del 1\% en el último trimestre del año 2019.
+\end{enumerate}
+
+
+
+\clearpage
+\appendix
+
+\section{Apéndice}
+
+\end{document}
