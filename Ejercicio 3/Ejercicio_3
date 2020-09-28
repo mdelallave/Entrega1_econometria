@@ -6,6 +6,8 @@ clc
 %% Importar datos
 % data = xlsread('ibex.csv','B3:C1558');
 % ibex = data; 
+% En el mac no me va la función de importar datos con xlsread. Probad si
+% funciona.
 %% Hacemos un gráfico con Ibex
 figure(1);
 plot(ibex);
@@ -91,3 +93,38 @@ subplot(2,2,3);
 autocorr(resstd2,16);
 subplot(2,2,4);
 parcorr(resstd2,16);
+%% Hacemos una predicción
+
+[libex_f,dt_errorf] = forecast(estmodelo2,70,'Y0', libex);
+b_inferior = libex_f - 1.96*sqrt(dt_errorf);
+b_superior = libex_f + 1.96*sqrt(dt_errorf);
+figure;
+plot(libex,'Color',[.7,.7,.7]);
+hold on
+h1 = plot(1556:1625,b_inferior,'r:','LineWidth',2);
+plot(1556:1625,b_superior,'r:','LineWidth',2)
+h2 = plot(1556:1625,libex_f,'k','LineWidth',2); %predicción
+legend([h1 h2],'Intervalo al 95% de confianza','Predicción puntual',...
+	     'Location','NorthWest')
+title('Predicción del Ibex a cierre de año')
+hold off
+
+% Aquí he hecho una predicción del valor del rendimiento del ibex hasta
+% final del año 2018 (70 días). Por lo que entiendo, el enunciado no pide esto; 
+% sino una predicción mediante simulación, a partir de la distribución de los
+% epsilón a fecha T (último dato disponible). Por tanto, entiendo que hay
+% que hacer, por ejemplo, 10.000 simulaciones de 70 valores de una normal.
+% Luego, calcular el valor de los rendimientos del Ibex hasta T+70 con las
+% 10.000 simulaciones. Y con estos datos en T+70, obtener la probabilidad de 
+% que el rendimiento obtenido sea menor que el valor de los rendimientos a 
+% fecha T. (ver clase 25/09; 1:03:00)
+%
+% Dudas: 1) los residuos no se comportan como una
+% normal, por tanto, bajo qué distribución simulo los valores de epsilon
+% desde T hasta T+70. 2) No veo cómo plantear el bucle para obtener los
+% valores de los rendimientos en T+70 para 10.000 simulaciones.
+
+%% Vamos a obtener la predicción mediante simulación
+mean(res2); var(res2) % (0; 1.429)
+normrnd(0,sqrt(1.4299),[70,10000]); %Creamos 70 valores 10.000 veces de 
+%normales con la distri del residuo
