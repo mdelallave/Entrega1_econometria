@@ -51,11 +51,11 @@ title('PACF del Rendimiento del Ibex');
 
 %% Modelo
 modelo=arima(1,1,1);
-estmodelo=estimate(modelo,dlibex); 
+estmodelo=estimate(modelo,libex); 
 % estimamos el modelo.La constante no es significativa.
 
 %% Hacemos inferencia
-[res,varres,logL] = infer(estmodelo,dlibex); %inferencia sobre el modelo.
+[res,varres,logL] = infer(estmodelo,libex); %inferencia sobre el modelo.
 resstd = res/sqrt(estmodelo.Variance);
 [h,p,jbstat,critval]=jbtest(resstd,0.01) 
 %test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
@@ -72,12 +72,12 @@ autocorr(resstd,16);
 subplot(2,2,4);
 parcorr(resstd,16);
 %% Modelo 2
-modelo2=arima('Constant',0,'ARLags',[1,4,5,12],'MALags',[1,2],'D',1);
-estmodelo2=estimate(modelo2,dlibex); 
+modelo2=arima('Constant',0,'ARLags',[2,4,5,12],'MALags',[4],'D',1);
+estmodelo2=estimate(modelo2,libex); 
 % estimamos el modelo.La constante no es significativa.
 
 %% Hacemos inferencia
-[res2,varres2,logL2] = infer(estmodelo2,dlibex); %inferencia sobre el modelo.
+[res2,varres2,logL2] = infer(estmodelo2,libex); %inferencia sobre el modelo.
 resstd2 = res2/sqrt(estmodelo2.Variance);
 [h2,p2,jbstat2,critval2]=jbtest(resstd2,0.01) 
 %test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
@@ -95,6 +95,21 @@ subplot(2,2,4);
 parcorr(resstd2,16);
 %% Hacemos una predicción
 
+% Aquí he hecho una predicción del valor del rendimiento del ibex hasta
+% final del año 2018 (70 días). Creo que el enunciado no pide esto; 
+% sino una predicción mediante simulación, a partir de la distribución de los
+% epsilón a fecha T (último dato disponible). Por tanto, entiendo que hay
+% que hacer, por ejemplo, 10.000 simulaciones de 70 valores de una normal.
+% Luego, calcular el valor de los rendimientos del Ibex hasta T+70 con las
+% 10.000 simulaciones. Y con estos datos en T+70, obtener la probabilidad de 
+% que el rendimiento obtenido sea menor que el valor de los rendimientos a 
+% fecha T. (clase 25/09; 1:03:00)
+
+% Dudas: 1) los residuos no se comportan como una
+% normal, por tanto, bajo que distribución simulo los valores de epsilón
+% desde T hasta T+70. 2) No veo cómo plantear el bucle para obtener los
+% valores de los rendimientos en T+70 para 10.000 simulaciones.
+
 [libex_f,dt_errorf] = forecast(estmodelo2,70,'Y0', libex);
 b_inferior = libex_f - 1.96*sqrt(dt_errorf);
 b_superior = libex_f + 1.96*sqrt(dt_errorf);
@@ -108,23 +123,7 @@ legend([h1 h2],'Intervalo al 95% de confianza','Predicción puntual',...
 	     'Location','NorthWest')
 title('Predicción del Ibex a cierre de año')
 hold off
+%% Calculamos la probabilidad
 
-% Aquí he hecho una predicción del valor del rendimiento del ibex hasta
-% final del año 2018 (70 días). Por lo que entiendo, el enunciado no pide esto; 
-% sino una predicción mediante simulación, a partir de la distribución de los
-% epsilón a fecha T (último dato disponible). Por tanto, entiendo que hay
-% que hacer, por ejemplo, 10.000 simulaciones de 70 valores de una normal.
-% Luego, calcular el valor de los rendimientos del Ibex hasta T+70 con las
-% 10.000 simulaciones. Y con estos datos en T+70, obtener la probabilidad de 
-% que el rendimiento obtenido sea menor que el valor de los rendimientos a 
-% fecha T. (ver clase 25/09; 1:03:00)
-%
-% Dudas: 1) los residuos no se comportan como una
-% normal, por tanto, bajo qué distribución simulo los valores de epsilon
-% desde T hasta T+70. 2) No veo cómo plantear el bucle para obtener los
-% valores de los rendimientos en T+70 para 10.000 simulaciones.
 
-%% Vamos a obtener la predicción mediante simulación
-mean(res2); var(res2) % (0; 1.429)
-normrnd(0,sqrt(1.4299),[70,10000]); %Creamos 70 valores 10.000 veces de 
-%normales con la distri del residuo
+
