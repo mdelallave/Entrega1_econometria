@@ -1,0 +1,17 @@
+function [med,dtip] = graf_m_std(x,p)
+%Gráfico media-desviación típica de una serie estandarizada
+y=(x-mean(x))./std(x);
+T=length(y);
+N=1+int16(fix(T/p)); %Tamaño N de las submuestras
+med=zeros(N,1);
+dtip=zeros(N,1);
+for i=1:N
+    med(i) = mean(y(1+p*(i-1):min(p*i,T))); 
+    dtip(i)=std(y(1+p*(i-1):min(p*i,T)));
+end
+figure;
+plot(med,dtip,'bo');
+title('Gráfico Media-Desviación Típica');
+    
+end
+
