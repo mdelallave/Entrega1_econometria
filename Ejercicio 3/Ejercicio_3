@@ -1,0 +1,93 @@
+%% Limpiamos
+close('all')
+clearvars
+clc
+
+%% Importar datos
+% data = xlsread('ibex.csv','B3:C1558');
+% ibex = data; 
+%% Hacemos un gráfico con Ibex
+figure(1);
+plot(ibex);
+title('Ibex');
+%% Particionamos la muestra en 100 submuestras, 
+% y hacemos el grafico media desviacion tipica
+part=100;
+[med,dtip] = graf_m_std(ibex,part);
+% Los datos en nivel no presentan estacionariedad
+
+%% Manipulación de los datos
+% Transformación logarítmica (rendimientos)
+libex = 100*log(ibex);
+
+% Estudiamos su estacionariedad
+figure(2);
+subplot(2,1,1);
+autocorr(libex,20);
+title('ACF del log del IBEX');
+subplot(2,1,2);
+parcorr(libex,20); 
+title('PACF del log del IBEX');
+
+% Vemos como la ACF toma valores muy altos que no tienden a desaparecer.
+% Indica ausencia de estacionariedad.
+
+%% Tomamos primeras diferencias
+dlibex=libex(2:end)-libex(1:end-1);
+figure(3);
+plot(dlibex);
+title('Rendimiento del Ibex');
+figure(4);
+subplot(2,1,1);
+autocorr(dlibex,20); 
+title('ACF del Rendimiento del Ibex');
+subplot(2,1,2);
+parcorr(dlibex,20);
+title('PACF del Rendimiento del Ibex');
+% LA ACF ya no presenta valores positivos. La serie ya presenta
+% estacionariedad.
+
+%% Modelo
+modelo=arima(1,1,1);
+estmodelo=estimate(modelo,dlibex); 
+% estimamos el modelo.La constante no es significativa.
+
+%% Hacemos inferencia
+[res,varres,logL] = infer(estmodelo,dlibex); %inferencia sobre el modelo.
+resstd = res/sqrt(estmodelo.Variance);
+[h,p,jbstat,critval]=jbtest(resstd,0.01) 
+%test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
+% rechazo normalidad.
+figure;
+subplot(2,2,1);
+plot(resstd); 
+title('Residuos estandarizados');
+subplot(2,2,2);
+histogram(resstd,10);
+title('Residuos Estandarizados')
+subplot(2,2,3);
+autocorr(resstd,16);
+subplot(2,2,4);
+parcorr(resstd,16);
+%% Modelo 2
+modelo2=arima('Constant',0,'ARLags',[1,4,5,12],'MALags',[1,2],'D',1);
+estmodelo2=estimate(modelo2,dlibex); 
+% estimamos el modelo.La constante no es significativa.
+
+%% Hacemos inferencia
+[res2,varres2,logL2] = infer(estmodelo2,dlibex); %inferencia sobre el modelo.
+resstd2 = res2/sqrt(estmodelo2.Variance);
+[h2,p2,jbstat2,critval2]=jbtest(resstd2,0.01) 
+%test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
+% rechazo normalidad.
+figure;
+subplot(2,2,1);
+plot(resstd2); 
+title('Residuos estandarizados modelo 2');
+subplot(2,2,2);
+histogram(resstd2,10);
+title('Residuos Estandarizados modelo 2')
+subplot(2,2,3);
+autocorr(resstd2,16);
+subplot(2,2,4);
+parcorr(resstd2,16);
