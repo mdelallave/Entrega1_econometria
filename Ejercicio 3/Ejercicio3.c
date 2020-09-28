@@ -6,7 +6,7 @@ clc
 %% Importar datos
 % data = csvread('GDPC1.csv');
 % GPD = data; 
-% En el mac no me va la función de importar datos con xlsread. Y con csvread no sé hacerlo. Probad si os
+% En el mac no me va la función de importar datos con xlsread. Probad si
 % funciona.
 %% Hacemos un gráfico con GPD
 figure(1);
@@ -52,11 +52,11 @@ title('PACF de la tasa de variación de GPDC');
 %% Modelo
 % Empezamos con un modelo ARIMA(1,1,1)
 modelo=arima(1,1,1);
-estmodelo=estimate(modelo,dlgdpc); 
+estmodelo=estimate(modelo,lgdpc); 
 % estimamos el modelo.La constante no es significativa.
 
 %% Hacemos inferencia
-[res,varres,logL] = infer(estmodelo,dlgdpc); %inferencia sobre el modelo.
+[res,varres,logL] = infer(estmodelo,lgdpc); %inferencia sobre el modelo.
 resstd = res/sqrt(estmodelo.Variance);
 [h,p,jbstat,critval]=jbtest(resstd,0.01) 
 %test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
@@ -73,12 +73,12 @@ autocorr(resstd,16);
 subplot(2,2,4);
 parcorr(resstd,16);
 %% Modelo 2
-modelo2=arima( 'ARLags',[1,2,9,10,11,15],'MALags',[1,13],'D',1);
-estmodelo2=estimate(modelo2,dlgdpc); 
+modelo2=arima( 'ARLags',[1,9,15],'MALags',[2,12,16],'D',(1));
+estmodelo2=estimate(modelo2,lgdpc); 
 % estimamos el modelo.La constante no es significativa.
 
 %% Hacemos inferencia
-[res2,varres2,logL2] = infer(estmodelo2,dlgdpc); %inferencia sobre el modelo.
+[res2,varres2,logL2] = infer(estmodelo2,lgdpc); %inferencia sobre el modelo.
 resstd2 = res2/sqrt(estmodelo2.Variance);
 [h2,p2,jbstat2,critval2]=jbtest(resstd2,0.01) 
 %test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
@@ -95,6 +95,17 @@ autocorr(resstd2,16);
 subplot(2,2,4);
 parcorr(resstd2,16);
 
-% ¿Está el modelo bien especificado? No encuentro de reducir la
-% autocorrelación en los lags cercanos a la barrera.
-%% Hacemos una predicción
+%% Hacemos una predicción al 99%
+[lgdpc_f,dt_errorf] = forecast(estmodelo2,2,'Y0',lgdpc);
+b_inferior = lgdpc_f - 2.3263*sqrt(dt_errorf);
+b_superior = lgdpc_f + 2.3263*sqrt(dt_errorf);
+figure;
+plot(lgdpc,'Color',[.7,.7,.7]);
+hold on
+h1 = plot(291:292,b_inferior,'r:','LineWidth',2);
+plot(291:292,b_superior,'r:','LineWidth',2)
+h2 = plot(291:292,lgdpc_f,'k','LineWidth',2); %predicción
+legend([h1 h2],'Intervalo al 99% de confianza','Predicción puntual',...
+	     'Location','NorthWest')
+title('Predicción del PIB PC de EEUU a cierre de año')
+hold off
