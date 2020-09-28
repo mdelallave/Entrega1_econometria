@@ -70,8 +70,18 @@ end
 pause
 %%
 % Residuos y test de Jarque-Bera
+res = zeros(length(data(:,1)),length(data(1,:)));
+varres = zeros(length(data(:,1)),length(data(1,:)));
+logL = zeros(length(data(1,:)),1);
+resstd = zeros(length(data(:,1)),length(data(1,:)));
+h = zeros(length(data(1,:)),1);
+p = zeros(length(data(1,:)),1);
+jbstat = zeros(length(data(1,:)),1);
+critval = zeros(length(data(1,:)),1);
+
 for i = 1:length(data(1,:))
-    [res(i),varres(i),logL(i)] = infer(estimacion(i),ldata(:,i));
-    resstd(i) = res(i)/sqrt(estimacion(i).Variance);
-    [h(i),p(i),jbstat(i),critval(i)] = jbtest(resstd(i),0.01)
+    [res(:,i),varres(:,i),logL(i)] = infer(estimacion(i),ldata(:,i));
+    resstd(:,i) = res(:,i)/sqrt(estimacion(i).Variance);
+    [h(i),p(i),jbstat(i),critval(i)] = jbtest(resstd(:,i),0.01);
 end
+h, p, jbstat, critval
