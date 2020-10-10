@@ -112,9 +112,7 @@ for i = 1:length(estimacion)
     subplot(2,2,4);
     parcorr(resstd(:,i),20);
 end
-% Residuos EURO-US son ruido blanco, pero para Repsol y el crudo hay que
-% ajustar el modelo. Todos los coeficientes de EURO-US son no
-% significativos, por lo que hay que especificar otro tipo de modelo.
+
 
 %% Reajustamos el modelo
 
