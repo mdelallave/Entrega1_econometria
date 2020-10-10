@@ -1,6 +1,6 @@
 clear all
 %% Muestra
-M = 1.0e4;
+M = 1000;
 T = [20,50,100];
 mu = 0;
 sigma = 1;
@@ -21,11 +21,11 @@ for j = 1:length(signif_level)
     end
 end
 
-n_rejects_X1 = sum(JB_X1 == 1,1);
+n_rejects_X1 = sum(JB_X1 == 1);
 per_rejects_X1 = n_rejects_X1/M*100;
-n_rejects_X2 = sum(JB_X2 == 1,1);
+n_rejects_X2 = sum(JB_X2 == 1);
 per_rejects_X2 = n_rejects_X2/M*100;
-n_rejects_X3 = sum(JB_X3 == 1,1);
+n_rejects_X3 = sum(JB_X3 == 1);
 per_rejects_X3 = n_rejects_X3/M*100;
 
 
@@ -45,63 +45,60 @@ per_rejects_X3 = n_rejects_X3/M*100;
 %%%%%
 
 %% Contraste de potencia
+Z1 = zeros(M,T(1),30);
+Z2 = zeros(M,T(2),30);
+Z3 = zeros(M,T(3),30);
+JB_Z1= zeros(M,length(signif_level),30);
+JB_Z2= zeros(M,length(signif_level),30);
+JB_Z3= zeros(M,length(signif_level),30);
+n_rejects_Z1 = zeros(30,3);
+per_rejects_Z1 = zeros(30,3);
+n_rejects_Z2 = zeros(30,3);
+per_rejects_Z2 = zeros(30,3);
+n_rejects_Z3 = zeros(30,3);
+per_rejects_Z3 = zeros(30,3);
 
-Z1 = trnd(3,M,T(1));
-Z2 = trnd(3,M,T(2));
-Z3 = trnd(3,M,T(3));
-
-JB_Z1= zeros(M,length(signif_level));
-JB_Z2= zeros(M,length(signif_level));
-JB_Z3= zeros(M,length(signif_level));
-
-for j = 1:length(signif_level)
-    for i = 1:M
-        JB_Z1(i,j) = jbtest(Z1(i,:),signif_level(j));
-        JB_Z2(i,j) = jbtest(Z2(i,:),signif_level(j));
-        JB_Z3(i,j) = jbtest(Z3(i,:),signif_level(j));
+for n = 1:30
+    Z1(:,:,n) = trnd(n,M,T(1));
+    Z2(:,:,n) = trnd(n,M,T(2));
+    Z3(:,:,n) = trnd(n,M,T(3));
+    
+    for j = 1:length(signif_level)
+        for i = 1:M
+            JB_Z1(i,j,n) = jbtest(Z1(i,:,n),signif_level(j));
+            JB_Z2(i,j,n) = jbtest(Z2(i,:,n),signif_level(j));
+            JB_Z3(i,j,n) = jbtest(Z3(i,:,n),signif_level(j));
+        end
     end
+    
+    n_rejects_Z1(n,:) = sum(JB_Z1(:,:,n) == 1,1);
+    per_rejects_Z1(n,:) = n_rejects_Z1(n,:)/M*100;
+    n_rejects_Z2(n,:) = sum(JB_Z2(:,:,n) == 1,1);
+    per_rejects_Z2(n,:) = n_rejects_Z2(n,:)/M*100;
+    n_rejects_Z3(n,:) = sum(JB_Z3(:,:,n) == 1,1);
+    per_rejects_Z3(n,:) = n_rejects_Z3(n,:)/M*100;
 end
 
-n_rejects_Z1 = sum(JB_Z1 == 1,1);
-per_rejects_Z1 = n_rejects_Z1/M*100;
-n_rejects_Z2 = sum(JB_Z2 == 1,1);
-per_rejects_Z2 = n_rejects_Z2/M*100;
-n_rejects_Z3 = sum(JB_Z3 == 1,1);
-per_rejects_Z3 = n_rejects_Z3/M*100;
+figure(1);
+plot(1:30,per_rejects_Z1(:,1),'.-',1:30,per_rejects_Z1(:,2),'-o',...
+          1:30,per_rejects_Z1(:,3),'-*')
+%title('Potencia del contraste Bera-Jarque (T = 20)')
+legend('$\alpha = 1\%$','$\alpha = 5\%$','$\alpha = 10\%$','Interpreter','latex')
+xlabel('Grados de libertad t-Student')
+ylabel('Porcentaje de rechazos de la Ho')
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRUEBAS ULTIMO APARTADO %%%%%%%%%%%%%%%%%%%%%
-sample_mean = mean(Z1(1,:)); % provisional, extender a todas las muestras
+figure(2);
+plot(1:30,per_rejects_Z2(:,1),'.-',1:30,per_rejects_Z2(:,2),'-o',...
+          1:30,per_rejects_Z2(:,3),'-*')
+%title('Potencia del contraste Bera-Jarque (T = 50)')
+legend('$\alpha = 1\%$','$\alpha = 5\%$','$\alpha = 10\%$','Interpreter','latex')
+xlabel('Grados de libertad t-Student')
+ylabel('Porcentaje de rechazos de la Ho')
 
-% Varianzas poblacionales calculadas como la media de las varianzas muestrales
-var_pobl_Z1 = mean(var(Z1,0,2));
-
-sk_Z1 = skewness(Z1,0,2);
-kur_Z1 = kurtosis(Z1,0,2);
-myJB_Z1 = T(1)/6*(sk_Z1.^2 + 0.25*(kur_Z1-3).^2);
-critical_v = chi2inv(1-signif_level,2);
-test_result = myJB_Z1 < critical_v; 
-n_rejected_Z1 = M - sum(test_result);
-per_rejected = n_rejected_Z1/M;
-
-% dc para el contraste unilateral. H0:mu=5; H1: mu>5
-dc_uni=norminv(1-signif_level(1),0,1);
-% dc para el contraste bilateral. H0:mu=5; H1: mu<>5
-dc_bi=norminv(1-signif_level(1)/2,0,1);
-%Región Crítica para el contraste unilateral
-RC_uni=mu+(sigma/(T(1)^0.5))*dc_uni;
-%Región Crítica para el contraste bilateral
-RC_bi=[mu-(sigma/(T(1)^0.5))*dc_bi,mu+(sigma/(T(1)^0.5))*dc_bi];
-%p-value para el contraste unilateral
-pvalue_uni=1-normcdf(W0,0,1);
-%p-value para el contraste bilateral
-pvalue_bi=2*(1-normcdf(W0,0,1));
-%
-%Función Potencia para el contraste unilateral
-vmu1=mu:0.01:8; vmu1=vmu1';
-vpotencia=zeros(length(vmu1),1);
-for i=1:length(vmu1)
-    vpotencia(i)=1-normcdf((RC_uni-vmu1(i))/(sigma/(T(1)^0.5)),0,1);
-end
-figure;
-plot(vmu1,vpotencia);
-title('Curva de potencia; contraste unilateral');
+figure(3);
+plot(1:30,per_rejects_Z3(:,1),'.-',1:30,per_rejects_Z3(:,2),'-o',...
+          1:30,per_rejects_Z3(:,3),'-*')
+%title('Potencia del contraste Bera-Jarque (T = 100)')
+legend('$\alpha = 1\%$','$\alpha = 5\%$','$\alpha = 10\%$','Interpreter','latex')
+xlabel('Grados de libertad t-Student')
+ylabel('Porcentaje de rechazos de la Ho')
