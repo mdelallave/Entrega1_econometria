@@ -64,27 +64,27 @@ title('PACF del Rendimiento del Ibex');
 % observación 958 que mas tarde trataremos de controlar mediante una variable dummy.
 
 %% Modelo
-modelo=arima('ARlags',[4,5,12], 'MAlags', [4,5,12], 'D', 1);
-estmodelo=estimate(modelo,libex); 
+modelo1=arima('ARlags',[4,5,12], 'MAlags', [4,5,12], 'D', 1);
+estmodelo1=estimate(modelo1,libex); 
 % Estimamos un modelo ARIMA(1,1,1) sobre el modelo en logaritmos.
 % La constante y el AR(12) no son significativas.
 
 %% Hacemos inferencia
-[res,varres,logL] = infer(estmodelo,libex); %inferencia sobre el modelo.
-resstd = res/sqrt(estmodelo.Variance);
-[h,p,jbstat,critval] = jbtest(resstd, 0.01) 
+[res,varres,logL] = infer(estmodelo1,libex); %inferencia sobre el modelo.
+resstd1 = res/sqrt(estmodelo1.Variance);
+[h,p,jbstat,critval] = jbtest(resstd1, 0.01) 
 %test jarque bera. h=1 rechazo normalidad.
 figure;
 subplot(2,2,1);
-plot(resstd); 
+plot(resstd1); 
 title('Residuos estandarizados modelo 1');
 subplot(2,2,2);
-histogram(resstd,10);
+histogram(resstd1,10);
 title('Residuos Estandarizados modelo 1')
 subplot(2,2,3);
-autocorr(resstd,16);
+autocorr(resstd1,16);
 subplot(2,2,4);
-parcorr(resstd,16);
+parcorr(resstd1,16);
 %% Modelo 2
 modelo2=arima('Constant',0,'ARLags',[4,5],'MALags',[4,9,12],'D',1);
 estmodelo2=estimate(modelo2,libex); 
@@ -95,47 +95,46 @@ modelo3 = arima('Constant',0,'ARLags',[4,5],'MALags',[4,9],'D',1);
 estmodelo3=estimate(modelo3,libex); 
 % Ahora todos los coeficientes son significativos.
 
-%% Hacemos inferencia
-[res2,varres2,logL2] = infer(estmodelo3,libex); %inferencia sobre el modelo.
-resstd2 = res2/sqrt(estmodelo3.Variance);
-[h2,p2,jbstat2,critval2]=jbtest(resstd2,0.01) 
+%% Hacemos inferencia con el modelo 3
+[res3,varres3,logL3] = infer(estmodelo3,libex); %inferencia sobre el modelo.
+resstd3 = res3/sqrt(estmodelo3.Variance);
+[h2,p2,jbstat2,critval2]=jbtest(resstd3,0.01) 
 %test jarque bera. h=1 -> rechazo normalidad.
 figure;
 subplot(2,2,1);
-plot(resstd2); 
+plot(resstd3); 
 title('Residuos estandarizados modelo 3');
 subplot(2,2,2);
-histogram(resstd2,10);
+histogram(resstd3,10);
 title('Residuos Estandarizados modelo 3')
 subplot(2,2,3);
-autocorr(resstd2,16);
+autocorr(resstd3,16);
 subplot(2,2,4);
-parcorr(resstd2,16);
-% Queda algo de estructura en los retardos 2, 11, 12. Lo
+parcorr(resstd3,16);
+% Parece que queda algo de estructura en los retardos 2, 11, 12. Lo
 % tratamos en el modelo 4.
 
 %% Modelo 4
 modelo4 = arima('Constant',0,'ARLags',[2,4,5,11,12],'MALags',[4,9,11,12],'D',1);
-estmodelo4=estimate(modelo4,libex); 
+estmodelo4 = estimate(modelo4,libex); 
 
-% El MA(12) sale no significativo en el modelo, por lo que lo eliminamos.
-
+% El MA(12) no es significativo en el modelo, por lo que lo eliminamos.
 %% Hacemos inferencia del modelo 4
 [res4,varres4,logL4] = infer(estmodelo4,libex); %inferencia sobre el modelo.
-resstd4 = res4/sqrt(estmodelo3.Variance);
-[h2,p2,jbstat2,critval2] = jbtest(resstd2,0.01) 
+resstd4 = res4/sqrt(estmodelo4.Variance);
+[h2,p2,jbstat2,critval2] = jbtest(resstd4,0.01) 
 %test jarque bera. h=1 -> rechazo normalidad.
 figure;
 subplot(2,2,1);
-plot(resstd2); 
+plot(resstd4); 
 title('Residuos estandarizados modelo 4');
 subplot(2,2,2);
-histogram(resstd2,10);
+histogram(resstd4,10);
 title('Residuos Estandarizados modelo 4')
 subplot(2,2,3);
-autocorr(resstd2,16);
+autocorr(resstd4,16);
 subplot(2,2,4);
-parcorr(resstd2,16);
+parcorr(resstd4,16);
 
 % Comprobando la ACF y la PACF, vemos que ahora los residuos son r.b..
 
@@ -147,7 +146,7 @@ dummyImp(958) = 1;
 
 %% Modelo 5
 modelo5=arima('Constant',0,'ARLags',[2,4,5,11,12],'MALags',[4,9,11,12],'D',1);
-estmodelo3 = estimate(modelo5,libex,'X', dummyImp); 
+estmodelo5 = estimate(modelo5,libex,'X', dummyImp); 
 
 % La variable dummy no es significativa. La eliminamos del modelo. Nos
 % quedamos con el modelo 4 como modelo definitivo.
@@ -168,7 +167,7 @@ legend([h1 h2],'Intervalo al 95% de confianza','Predicción puntual',...
 title('Predicción del Ibex a cierre de año')
 hold off
 
-%% Hacemos simulación para obtener una distribución empírica
+%% Hacemos simulación para obtener una distribución empirica
 % en la fecha de interés
 
 n = 10000; % número de valores aleatorios.
@@ -187,6 +186,8 @@ var_sim = var(libex_s)
 
 X = (libex(1556,1) - mu_sim)/sqrt(var_sim);
 P = normpdf(X,0,1)
+
+
 
 
 
