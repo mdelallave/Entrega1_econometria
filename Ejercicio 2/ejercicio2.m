@@ -724,3 +724,18 @@ DM = dbar/(var_dbar^0.5)
 p_value = 2*(1-normcdf(abs(DM),0,1))
 % Rechazamos la H_0: esto quiere decir que los modelos no tienen la misma
 % capacidad predictiva.
+
+%% Vamos a comparar los estadísticos:
+
+RMSE_comparacion = RMSE > RMSE2
+MAE_comparacion = MAE > MAE2
+MAPE_comparacion = MAPE > MAPE2
+TIC_comparacion = TIC > TIC2
+
+% Tanto el RMSE como el MAE de los rendimientos es mayor que si tratamos
+% las series en precios, mientras que en el MAPE sólo es así para el tipo
+% de cambio EURO-US y para el TIC es al contrario.
+% Dado que el RMSE mide la variabilidad que tienen los errores de previsión
+% y con el MAE podemos comparar dos modelos diferentes, podemos decir la
+% predicción del modelo cuando usamos precios es más acertada que cuando
+% usamos rendimientos.
