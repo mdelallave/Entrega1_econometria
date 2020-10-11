@@ -9,6 +9,7 @@ clc
 % En el mac no me va la función de importar datos con xlsread. Probad si
 % funciona.
 %% Hacemos un gráfico con GPD
+gdpc = GDPC1(1:end-2);
 figure(1);
 plot(gdpc);
 title('gdpc');
@@ -21,6 +22,7 @@ part=100;
 %% Manipulación de los datos
 % Transformación logarítmica (rendimientos)
 lgdpc = 100*log(gdpc);
+plot(lgdpc)
 
 % Estudiamos su estacionariedad
 figure(2);
@@ -38,20 +40,46 @@ title('PACF del log del GDPC');
 dlgdpc=lgdpc(2:end)-lgdpc(1:end-1);
 figure(3);
 plot(dlgdpc);
-title('Tasa de variación de GPDC');
-figure(4);
+title('Tasa de variación de LGPDC');
 subplot(2,1,1);
 autocorr(dlgdpc,20); 
-title('ACF de la tasa de variación de GPDC');
+title('ACF de la tasa de variación de LGPDC');
 subplot(2,1,2);
 parcorr(dlgdpc,20);
-title('PACF de la tasa de variación de GPDC');
-% LA ACF ya no presenta valores positivos. La serie ya presenta
-% estacionariedad.
+title('PACF de la tasa de variación de LGPDC');
+% LA ACF ya no presenta valores positivos. Sin embargo, dudamos de que sea estacionaria.
 
+%% tomamos segundas diferencias 
+d2lgdpc=lgdpc(3:end)-lgdpc(1:end-2);
+figure(4);
+plot(d2lgdpc);
+title('Tasa de variación de D2LGPDC');
+
+figure(5);
+subplot(2,1,1);
+autocorr(d2lgdpc,20); 
+title('ACF de la tasa de variación de D2LGPDC');
+subplot(2,1,2);
+parcorr(d2lgdpc,20);
+title('PACF de la tasa de variación de D"LGPDC');
+
+%% Comprobamos si la 2º diferencia es significativa
+% Estimamos un MA(1)
+modelo_contraste=arima(0,0,1);
+estmdl=estimate(modelo_contraste,d2lgdpc);
+
+% Contruimos el IC al 95%
+IC = [0.95409 - 1.96*0.014479/(sqrt(288)); 0.95409 + ...
+    1.96*0.014479/(sqrt(288))]
+
+% Como la muestra es grande suponemos normalidad. El 0 cae fuera del IC.
+% Rechazamos la hipotesis nula y nos quedamos con que la segunda
+% diferencia es significativa.
+	
 %% Modelo
-% Empezamos con un modelo ARIMA(1,1,1)
-modelo=arima(1,1,1);
+% Empezamos con un modelo ARIMA(1,2,1)
+
+modelo=arima(1,2,1);
 estmodelo=estimate(modelo,lgdpc); 
 % estimamos el modelo.La constante no es significativa.
 
@@ -61,19 +89,19 @@ resstd = res/sqrt(estmodelo.Variance);
 [h,p,jbstat,critval]=jbtest(resstd,0.01) 
 %test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
 % rechazo normalidad.
-figure;
+figure(6);
 subplot(2,2,1);
 plot(resstd); 
 title('Residuos estandarizados');
 subplot(2,2,2);
-histogram(resstd,10);
+histogram(resstd,20);
 title('Residuos Estandarizados')
 subplot(2,2,3);
-autocorr(resstd,16);
+autocorr(resstd,20);
 subplot(2,2,4);
-parcorr(resstd,16);
+parcorr(resstd,20);
 %% Modelo 2
-modelo2=arima( 'ARLags',[1,9,15],'MALags',[2,12,16],'D',(1));
+modelo2=arima( 'ARLags',[1,2,9,13],'MALags',[2,4,5,10],'D',(2));
 estmodelo2=estimate(modelo2,lgdpc); 
 % estimamos el modelo.La constante no es significativa.
 
@@ -83,7 +111,7 @@ resstd2 = res2/sqrt(estmodelo2.Variance);
 [h2,p2,jbstat2,critval2]=jbtest(resstd2,0.01) 
 %test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
 % rechazo normalidad.
-figure;
+figure(7);
 subplot(2,2,1);
 plot(resstd2); 
 title('Residuos estandarizados modelo 2');
@@ -91,15 +119,15 @@ subplot(2,2,2);
 histogram(resstd2,10);
 title('Residuos Estandarizados modelo 2')
 subplot(2,2,3);
-autocorr(resstd2,16);
+autocorr(resstd2,20);
 subplot(2,2,4);
-parcorr(resstd2,16);
-
+parcorr(resstd2,20);
+ 
 %% Hacemos una predicción al 99%
 [lgdpc_f,dt_errorf] = forecast(estmodelo2,2,'Y0',lgdpc);
 b_inferior = lgdpc_f - 2.3263*sqrt(dt_errorf);
 b_superior = lgdpc_f + 2.3263*sqrt(dt_errorf);
-figure;
+figure(8);
 plot(lgdpc,'Color',[.7,.7,.7]);
 hold on
 h1 = plot(291:292,b_inferior,'r:','LineWidth',2);
