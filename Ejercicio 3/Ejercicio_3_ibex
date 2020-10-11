@@ -8,12 +8,20 @@ clc
 % ibex = data; 
 % En el mac no me va la función de importar datos con xlsread. Probad si
 % funciona.
+
 %% Hacemos un gráfico con Ibex
 figure(1);
 plot(ibex);
 title('Ibex');
-%% Particionamos la muestra en 100 submuestras, 
-% y hacemos el grafico media desviacion tipica
+subplot(2,1,1);
+autocorr(ibex,20);
+title('ACF del IBEX');
+subplot(2,1,2);
+parcorr(ibex,20); 
+title('PACF del  IBEX');
+
+%% Analisis de estacionariedad.
+% Aplicamos un gráfico media-varianza
 part=100;
 [med,dtip] = graf_m_std(ibex,part);
 % Los datos en nivel no presentan estacionariedad
@@ -34,7 +42,7 @@ title('PACF del log del IBEX');
 % Vemos como la ACF toma valores muy altos que no tienden a desaparecer.
 % Indica ausencia de estacionariedad.
 
-%% Tomamos primeras diferencias
+%% Tomamos primeras diferencias y analizamos estacionariedad.
 dlibex=libex(2:end)-libex(1:end-1);
 figure(3);
 plot(dlibex);
@@ -46,42 +54,42 @@ title('ACF del Rendimiento del Ibex');
 subplot(2,1,2);
 parcorr(dlibex,20);
 title('PACF del Rendimiento del Ibex');
-% LA ACF ya no presenta valores positivos. La serie ya presenta
-% estacionariedad.
+
+% LA ACF ya no presenta infinitos valores significativos. La serie presenta
+% estacionariedad. Sin embargo, dlibex presenta un valor muy grande en la
+% observación 958 que mas tarde trataremos de controlar mediante una variable dummy.
 
 %% Modelo
 modelo=arima(1,1,1);
 estmodelo=estimate(modelo,libex); 
-% estimamos el modelo.La constante no es significativa.
+% Estimamos un modelo ARIMA(1,1,1) sobre el modelo en logaritmos.
+% La constante no es significativa.
 
 %% Hacemos inferencia
 [res,varres,logL] = infer(estmodelo,libex); %inferencia sobre el modelo.
 resstd = res/sqrt(estmodelo.Variance);
-[h,p,jbstat,critval]=jbtest(resstd,0.01) 
-%test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
-% rechazo normalidad.
+[h,p,jbstat,critval] = jbtest(resstd, 0.01) 
+%test jarque bera. h=1 rechazo normalidad.
 figure;
 subplot(2,2,1);
 plot(resstd); 
-title('Residuos estandarizados');
+title('Residuos estandarizados modelo 1');
 subplot(2,2,2);
 histogram(resstd,10);
-title('Residuos Estandarizados')
+title('Residuos Estandarizados modelo 1')
 subplot(2,2,3);
 autocorr(resstd,16);
 subplot(2,2,4);
 parcorr(resstd,16);
 %% Modelo 2
-modelo2=arima('Constant',0,'ARLags',[2,4,5,12],'MALags',[4],'D',1);
+modelo2=arima('Constant',0,'ARLags',[2,4,5,11],'MALags',[4,9,11],'D',1);
 estmodelo2=estimate(modelo2,libex); 
-% estimamos el modelo.La constante no es significativa.
 
 %% Hacemos inferencia
 [res2,varres2,logL2] = infer(estmodelo2,libex); %inferencia sobre el modelo.
 resstd2 = res2/sqrt(estmodelo2.Variance);
 [h2,p2,jbstat2,critval2]=jbtest(resstd2,0.01) 
-%test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
-% rechazo normalidad.
+%test jarque bera. h=1 -> rechazo normalidad.
 figure;
 subplot(2,2,1);
 plot(resstd2); 
@@ -93,10 +101,35 @@ subplot(2,2,3);
 autocorr(resstd2,16);
 subplot(2,2,4);
 parcorr(resstd2,16);
+%% Función impulso
+dummyImp = zeros(1569,1);
+dummyImp(958) = 1;
+%% Modelo 3
+modelo3=arima('Constant',0,'ARLags',[2,4,5],'MALags',[4,9],'D',1);
+estmodelo3 = estimate(modelo3,libex,'X', dummyImp); 
+% estimamos el modelo. Introduciendo la dummy como variable explicativa, el
+% AR(11) y el MA(11) no son significativos.
+
+%% Hacemos inferencia
+[res2,varres2,logL2] = infer(estmodelo3,libex); %inferencia sobre el modelo.
+resstd2 = res2/sqrt(estmodelo2.Variance);
+[h2,p2,jbstat2,critval2]=jbtest(resstd2,0.01) 
+%test jarque bera. h=1 -> rechazo normalidad.
+figure;
+subplot(2,2,1);
+plot(resstd2); 
+title('Residuos estandarizados modelo 3');
+subplot(2,2,2);
+histogram(resstd2,10);
+title('Residuos Estandarizados modelo 3')
+subplot(2,2,3);
+autocorr(resstd2,16);
+subplot(2,2,4);
+parcorr(resstd2,16);
 %% Hacemos una predicción
 
 % Aquí he hecho una predicción del valor del rendimiento del ibex hasta
-% final del año 2018 (70 días). Creo que el enunciado no pide esto; 
+% final del año 2018 (70 días). Por lo que entiendo, el enunciado no pide esto; 
 % sino una predicción mediante simulación, a partir de la distribución de los
 % epsilón a fecha T (último dato disponible). Por tanto, entiendo que hay
 % que hacer, por ejemplo, 10.000 simulaciones de 70 valores de una normal.
