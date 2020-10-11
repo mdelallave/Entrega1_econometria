@@ -47,7 +47,8 @@ title('ACF de la tasa de variación de LGPDC');
 subplot(2,1,2);
 parcorr(dlgdpc,20);
 title('PACF de la tasa de variación de LGPDC');
-% LA ACF ya no presenta valores positivos. Sin embargo, dudamos de que sea estacionaria.
+% LA ACF ya no presenta valores positivos. La serie ya presenta
+% estacionariedad.
 
 %% tomamos segundas diferencias 
 d2lgdpc=lgdpc(3:end)-lgdpc(1:end-2);
@@ -69,17 +70,16 @@ modelo_contraste=arima(0,0,1);
 estmdl=estimate(modelo_contraste,d2lgdpc);
 
 % Contruimos el IC al 95%
-IC = [0.95409 - 1.96*0.014479/(sqrt(288)); 0.95409 + ...
+IC = [1 - 1.96*0.014479/(sqrt(288)); 1 + ...
     1.96*0.014479/(sqrt(288))]
 
-% Como la muestra es grande suponemos normalidad. El 0 cae fuera del IC.
-% Rechazamos la hipotesis nula y nos quedamos con que la segunda
+% Como la muestra es grande suponemos normalidad. El 1 cae dentro del IC.
+% No rechazamos la hipotesis nula y nos quedamos con que la primera
 % diferencia es significativa.
-	
 %% Modelo
-% Empezamos con un modelo ARIMA(1,2,1)
+% Empezamos con un modelo ARIMA(1,1,1)
 
-modelo=arima(1,2,1);
+modelo=arima(1,1,1);
 estmodelo=estimate(modelo,lgdpc); 
 % estimamos el modelo.La constante no es significativa.
 
@@ -101,7 +101,7 @@ autocorr(resstd,20);
 subplot(2,2,4);
 parcorr(resstd,20);
 %% Modelo 2
-modelo2=arima( 'ARLags',[1,2,9,13],'MALags',[2,4,5,10],'D',(2));
+modelo2=arima('ARLags',[1,2,5,12],'D',(1));
 estmodelo2=estimate(modelo2,lgdpc); 
 % estimamos el modelo.La constante no es significativa.
 
@@ -109,8 +109,8 @@ estmodelo2=estimate(modelo2,lgdpc);
 [res2,varres2,logL2] = infer(estmodelo2,lgdpc); %inferencia sobre el modelo.
 resstd2 = res2/sqrt(estmodelo2.Variance);
 [h2,p2,jbstat2,critval2]=jbtest(resstd2,0.01) 
-%test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
-% rechazo normalidad.
+ % h=1 rechazo normalidad.
+ 
 figure(7);
 subplot(2,2,1);
 plot(resstd2); 
@@ -137,3 +137,4 @@ legend([h1 h2],'Intervalo al 99% de confianza','Predicción puntual',...
 	     'Location','NorthWest')
 title('Predicción del PIB PC de EEUU a cierre de año')
 hold off
+
