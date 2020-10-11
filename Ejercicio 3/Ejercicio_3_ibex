@@ -168,6 +168,25 @@ legend([h1 h2],'Intervalo al 95% de confianza','Predicción puntual',...
 title('Predicción del Ibex a cierre de año')
 hold off
 
+%% Hacemos simulación para obtener una distribución empírica
+% en la fecha de interés
+
+n = 10000; % número de valores aleatorios.
+var_res4 = varres4(1,1); %varianza residuos para el modelo estimado (Constante)
+epsilon = normrnd(0, var_res4, n,1); 
+libex_s = zeros(n,1);
+
+for i = 1:n
+    libex_s(i) = libex_f(56,1) + epsilon(i);
+end
+
+mu_sim = mean(libex_s)
+var_sim = var(libex_s)
+
+%% Probabilidad de que acabe el año con una ganancia respecto al último dato.
+
+X = (libex(1556,1) - mu_sim)/sqrt(var_sim);
+P = normpdf(X,0,1)
 
 
 
