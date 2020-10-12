@@ -157,7 +157,7 @@ title('PACF del Rendimiento del Ibex');
 % subplot(2,2,4);
 % parcorr(l_resstd3,20);
 
-%% Modelo definitivo de Diego
+%% Último modelo de Diego
 modelo_Diego = arima('Constant',0,'ARLags',[4 5 10 12],'MALags',[5 10],'D',1);
 estmodelo_Diego = estimate(modelo_Diego,libex);
 %     ARIMA(12,1,10) Model (Gaussian Distribution):
@@ -173,7 +173,7 @@ estmodelo_Diego = estimate(modelo_Diego,libex);
 %     MA{5}         0.36578       0.13268         2.7569        0.005836
 %     MA{10}       -0.41847       0.13239        -3.1609       0.0015728
 %     Variance       1.4175      0.026045         54.427               0
-%% Hacemos inferencia sobre el modelo definitivo de Diego
+%% Hacemos inferencia sobre el modelo de Diego
 [res,varres,logL_imp] = infer(estmodelo_Diego,libex); %inferencia sobre el modelo.
 l_resstd4 = res/sqrt(estmodelo_Diego.Variance);
 [AIC_Diego,BIC_Diego] = aicbic(logL_imp,6,1556)
@@ -189,28 +189,13 @@ autocorr(l_resstd4,20);
 subplot(2,2,4);
 parcorr(l_resstd4,20);
 
-%% Modelo 4 (definitivo Carlos)
-modelo_Carlos = arima('Constant',0,'ARLags',[2,4,5,11,12],'MALags',[4,9,11,12],'D',1);
-estmodelo_Carlos=estimate(modelo_Carlos,libex); 
-%     ARIMA(12,1,12) Model (Gaussian Distribution):
-%  
-%                   Value      StandardError    TStatistic      PValue  
-%                 _________    _____________    __________    __________
-% 
-%     Constant            0             0            NaN             NaN
-%     AR{2}       -0.049498      0.014308        -3.4594      0.00054141
-%     AR{4}        -0.71475      0.069061         -10.35      4.2021e-25
-%     AR{5}       -0.082263      0.021153         -3.889      0.00010065
-%     AR{11}         0.2372       0.06001         3.9527       7.726e-05
-%     AR{12}        0.20126      0.073038         2.7555       0.0058603
-%     MA{4}         0.67068      0.065759         10.199      2.0015e-24
-%     MA{9}       -0.061994      0.020017         -3.097       0.0019549
-%     MA{11}         -0.271      0.064624        -4.1935      2.7463e-05
-%     MA{12}       -0.25379      0.068231        -3.7196      0.00019954
-%     Variance       1.4053      0.028963         48.521               0
+%% Modelo 4 Carlos (DEFINITIVO)
+modelo4 = arima('Constant',0,'ARLags',[2,4,5,10],'MALags',[2,5,10],'D',1);
+estmodelo4=estimate(modelo4,libex); 
+% Todos los parámetros ahora vuelves a ser significativos al 5%.
 
-[res4,varres4,logL4] = infer(estmodelo_Carlos,libex); %inferencia sobre el modelo.
-resstd4 = res4/sqrt(estmodelo_Carlos.Variance);
+[res4,varres4,logL4] = infer(estmodelo4,libex); %inferencia sobre el modelo.
+resstd4 = res4/sqrt(estmodelo4.Variance);
 [AIC_Carlos,BIC_Carlos] = aicbic(logL4,9,1556);
 figure;
 subplot(2,2,1);
@@ -224,45 +209,46 @@ autocorr(resstd4,20);
 subplot(2,2,4);
 parcorr(resstd4,20);
 
+% Este modelo es el mejor y es el que usamos para la predicción mediante
+% simulación. No obstante, le añadimos la variable dummy a continuación,
+% que es significativa
+
 %% Función impulso
 dummyImp = zeros(1569,1);
 dummyImp(958) = 1;
 
 %% Modelo Definitivo con impulso
-modelo_imp=arima('Constant',0,'ARLags',[2,4,5,11,12],'MALags',[4,9,11,12],...
-                 'D',1);
-estmodelo_imp = estimate(modelo_imp,libex,'X', dummyImp); 
-% El coeficiente asociado a la variable instrumental es no significativo,
-% con lo que nos quedamos con el modelo anterior
+estmodelo_imp = estimate(modelo4,libex,'X', dummyImp); 
 
-%% Predicciones
-var_resid = var(res4);
+% El coeficiente asociado a la variable instrumental es significativo, con
+% lo que nos quedamos con este modelo
 
-M = 1.0e2;
-n = 56;
-epsilon = normrnd(0,var_resid,M,n + 12);
+%% Predicciones (simulacion alternativa, no funciona)
+var_resid = estmodelo4.Variance;
+
+M = 1.0e4; % número de trayectorias simuladas
+n = 56; % número de observaciones por trayectoria
+epsilon = normrnd(0,sqrt(var_resid),M,n + 12); 
 
 % Parameters
-phi_2 = estmodelo_Carlos.AR{2};
-phi_4 = estmodelo_Carlos.AR{4};
-phi_5 = estmodelo_Carlos.AR{5};
-phi_11 = estmodelo_Carlos.AR{11};
-phi_12 = estmodelo_Carlos.AR{12};
-theta_4 = estmodelo_Carlos.MA{4};
-theta_9 = estmodelo_Carlos.MA{9};
-theta_11 = estmodelo_Carlos.MA{11};
-theta_12 = estmodelo_Carlos.MA{12};
+phi_2 = estmodelo4.AR{2};
+phi_4 = estmodelo4.AR{4};
+phi_5 = estmodelo4.AR{5};
+phi_10= estmodelo4.AR{10};
+theta_2 = estmodelo4.MA{2};
+theta_5 = estmodelo4.MA{5};
+theta_10 = estmodelo4.MA{10};
 
 f_r = zeros(M,n + 12);
 
 for i = 1:M
     epsilon(i,1:12) = res4(end-11:end);
-    f_r(i,1:12) = libex(end-11:end);
+    f_r(i,1:12) = dlibex(end-11:end); % Primeras diferencias logarítmicas
     for j = 13:n + 12
-    f_r(i,j) = phi_2*f_r(j - 2) + phi_4*f_r(j - 4) + ...
-        phi_5*f_r(j - 5) + phi_11*f_r(j - 11) + phi_12*f_r(j - 12) + ... 
-        theta_4*epsilon(j - 4) + theta_9*epsilon(j - 9) + ...
-        theta_11*epsilon(j - 11) + theta_12*epsilon(j - 12) + epsilon(j); 
+    f_r(i,j) = phi_2*f_r(i,j - 2) + phi_4*f_r(i,j - 4) + ...
+        phi_5*f_r(i,j - 5) + phi_10*f_r(i,j - 10) - ... 
+        theta_2*epsilon(i,j - 2) - theta_5*epsilon(i,j - 5) - ...
+        theta_10*epsilon(i,j - 10) + epsilon(i,j); 
     end
 end
 
