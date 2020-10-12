@@ -9,7 +9,7 @@ clc
 % En el mac no me va la función de importar datos con xlsread. Probad si
 % funciona.
 %% Hacemos un gráfico con GPD
-gdpc = GDPC1(1:end-2);
+gdpc = GDPC1(1:end-2,2);
 figure(1);
 plot(gdpc);
 title('gdpc');
@@ -34,13 +34,14 @@ parcorr(lgdpc,20);
 title('PACF del log del GDPC');
 
 % Vemos como la ACF toma valores muy altos que no tienden a desaparecer.
-% Indica ausencia de estacionariedad.
+% Indica ausencia de estacionariedad en varianza.
 
 %% Tomamos primeras diferencias
 dlgdpc=lgdpc(2:end)-lgdpc(1:end-1);
-figure(3);
+figure(3)
 plot(dlgdpc);
 title('Tasa de variación de LGPDC');
+figure(4)
 subplot(2,1,1);
 autocorr(dlgdpc,20); 
 title('ACF de la tasa de variación de LGPDC');
@@ -68,63 +69,118 @@ title('PACF de la tasa de variación de D"LGPDC');
 % Estimamos un MA(1)
 modelo_contraste=arima(0,0,1);
 estmdl=estimate(modelo_contraste,d2lgdpc);
+theta = estmdl.MA;
+% El error estandar de theta es 0.014479.
 
 % Contruimos el IC al 95%
 IC = [1 - 1.96*0.014479/(sqrt(288)); 1 + ...
     1.96*0.014479/(sqrt(288))]
 
-% Como la muestra es grande suponemos normalidad. El 1 cae dentro del IC.
-% No rechazamos la hipotesis nula y nos quedamos con que la primera
+% Como la muestra es grande suponemos normalidad. El valor estimado de 
+% theta no cae dentro del IC.
+% Rechazamos la hipotesis nula y nos quedamos con que la segunda
 % diferencia es significativa.
-%% Modelo
+%% Modelo 1
 % Empezamos con un modelo ARIMA(1,1,1)
 
-modelo=arima(1,1,1);
-estmodelo=estimate(modelo,lgdpc); 
-% estimamos el modelo.La constante no es significativa.
+modelo1=arima(1,2,1);
+estmodelo1=estimate(modelo1,lgdpc); 
+% Al estimar el modelo encontramos que la constante no es significativa.
 
 %% Hacemos inferencia
-[res,varres,logL] = infer(estmodelo,lgdpc); %inferencia sobre el modelo.
-resstd = res/sqrt(estmodelo.Variance);
-[h,p,jbstat,critval]=jbtest(resstd,0.01) 
-%test jarque bera. h =0 -> no puedo rechazar h0 de normalidad. h=1 rechazo normalidad.
-% rechazo normalidad.
+[res1,varres1,logL1] = infer(estmodelo1,lgdpc); %inferencia sobre el modelo.
+resstd1 = res1/sqrt(estmodelo1.Variance);
+[h,p,jbstat,critval]=jbtest(resstd1,0.01) 
+% h=1 -> rechazo normalidad.
 figure(6);
 subplot(2,2,1);
-plot(resstd); 
-title('Residuos estandarizados');
+plot(resstd1); 
+title('Residuos estandarizados modelo 1');
 subplot(2,2,2);
-histogram(resstd,20);
-title('Residuos Estandarizados')
+histogram(resstd1,20);
+title('Residuos Estandarizados modelo2')
 subplot(2,2,3);
-autocorr(resstd,20);
+autocorr(resstd1,20);
 subplot(2,2,4);
-parcorr(resstd,20);
-%% Modelo 2
-modelo2=arima('ARLags',[1,2,5,12],'D',(1));
-estmodelo2=estimate(modelo2,lgdpc); 
-% estimamos el modelo.La constante no es significativa.
+parcorr(resstd1,20);
+% Viendo la ACF y la PACF, encontramos estructura en lag`s 2, 5, 12.
 
+%% Modelo 2
+modelo2 =arima('Constant',0,'ARlags',[1,2,5,12], 'MAlags',[1,2,5,12], ...
+    'D',[2]);
+estmodelo2=estimate(modelo2,lgdpc); 
+% Encontramos que el AR(2) no es significativo.
+%% Modelo 3
+modelo3 = arima('Constant',0,'ARlags',[1,5,12], 'MAlags',[1,2,5,12], ...
+    'D',[2]);
+estmodelo3 = estimate(modelo3,lgdpc); 
 %% Hacemos inferencia
-[res2,varres2,logL2] = infer(estmodelo2,lgdpc); %inferencia sobre el modelo.
-resstd2 = res2/sqrt(estmodelo2.Variance);
-[h2,p2,jbstat2,critval2]=jbtest(resstd2,0.01) 
- % h=1 rechazo normalidad.
- 
-figure(7);
+[res3,varres3,logL3] = infer(estmodelo3,lgdpc); %inferencia sobre el modelo.
+resstd3 = res3/sqrt(estmodelo3.Variance);
+[h,p,jbstat,critval]=jbtest(resstd3,0.01) 
+% h=1 -> rechazo normalidad.
+figure(6);
 subplot(2,2,1);
-plot(resstd2); 
-title('Residuos estandarizados modelo 2');
+plot(resstd3); 
+title('Residuos estandarizados modelo 1');
 subplot(2,2,2);
-histogram(resstd2,10);
-title('Residuos Estandarizados modelo 2')
+histogram(resstd3,20);
+title('Residuos Estandarizados modelo2')
 subplot(2,2,3);
-autocorr(resstd2,20);
+autocorr(resstd3,20);
 subplot(2,2,4);
-parcorr(resstd2,20);
- 
+parcorr(resstd3,20);
+% Encontramos estructura en el lag 6.
+%% Modelo 4
+modelo4 = arima('Constant',0,'ARlags',[1,5,6,12], 'MAlags',[1,2,5,6,12], ...
+    'D',[2]);
+estmodelo4 = estimate(modelo4,lgdpc); 
+%% Hacemos inferencia
+[res4,varres4,logL4] = infer(estmodelo4,lgdpc); %inferencia sobre el modelo.
+resstd4 = res4/sqrt(estmodelo4.Variance);
+[h,p,jbstat,critval]=jbtest(resstd4,0.01) 
+% h=1 -> rechazo normalidad.
+figure(6);
+subplot(2,2,1);
+plot(resstd4); 
+title('Residuos estandarizados modelo 1');
+subplot(2,2,2);
+histogram(resstd4,20);
+title('Residuos Estandarizados modelo2')
+subplot(2,2,3);
+autocorr(resstd4,20);
+subplot(2,2,4);
+parcorr(resstd4,20);
+% Encontramos estructura en el lag 9,17.
+%% Modelo 5
+modelo5 = arima('Constant',0,'ARlags',[1,5,6,12,17], 'MAlags',[1,2,5,6,9,12,17], ...
+    'D',[2]);
+estmodelo5 = estimate(modelo5,lgdpc); 
+
+% Los siguientes no son significativos:
+% AR(17), MA(12), 
+%% Modelo 6
+modelo6 = arima('Constant',0,'ARlags',[1,5,6,12], 'MAlags',[1,2,5,6,9,17], ...
+    'D',[2]);
+estmodelo6 = estimate(modelo6,lgdpc); 
+%% Hacemos inferencia modelo 6
+[res6,varres6,logL6] = infer(estmodelo6,lgdpc); %inferencia sobre el modelo.
+resstd6 = res6/sqrt(estmodelo6.Variance);
+[h,p,jbstat,critval]=jbtest(resstd6,0.01) 
+% h=1 -> rechazo normalidad.
+figure(6);
+subplot(2,2,1);
+plot(resstd6); 
+title('Residuos estandarizados modelo 6');
+subplot(2,2,2);
+histogram(resstd6,20);
+title('Residuos Estandarizados modelo 6')
+subplot(2,2,3);
+autocorr(resstd6,20);
+subplot(2,2,4);
+parcorr(resstd6,20);
 %% Hacemos una predicción al 99%
-[lgdpc_f,dt_errorf] = forecast(estmodelo2,2,'Y0',lgdpc);
+[lgdpc_f,dt_errorf] = forecast(estmodelo6,2,'Y0',lgdpc);
 b_inferior = lgdpc_f - 2.3263*sqrt(dt_errorf);
 b_superior = lgdpc_f + 2.3263*sqrt(dt_errorf);
 figure(8);
@@ -137,4 +193,6 @@ legend([h1 h2],'Intervalo al 99% de confianza','Predicción puntual',...
 	     'Location','NorthWest')
 title('Predicción del PIB PC de EEUU a cierre de año')
 hold off
+
+
 
