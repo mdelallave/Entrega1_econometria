@@ -15,6 +15,7 @@ alpha = 0.05; % Nivel de significación.
 Z = norminv(alpha/2,0,1);
 a = 100-alpha*100; a = string(a); % Alpha como caracter.
 T = length(data(1:end-N,1)); % Cantidad de datos.
+nombre = ["EURO-US","Repsol","crudo"]; % Títulos de los gráficos
 
 %% Manipulación de los datos
 % Transformación logarítmica (rendimientos)
@@ -71,6 +72,16 @@ title('ACF del rendimiento del crudo');
 subplot(3,2,6);
 parcorr(dlcrude,20);
 title('PACF del rendimiento del crudo');
+
+for i = 1:length(dldata(1,:))
+   figure(3);
+   subplot(3,1,i);
+   plot(dldata(:,i))
+   title(['Diferencia log de ', nombre(i)])
+end
+% Podemos apreciar que nuestras series son estacionales y no hace falta que
+% tomemos segundas diferencias.
+
 %% Modelo
 % Planteamos inicialmente un modelo ARIMA(1,1,1)
 
@@ -98,9 +109,8 @@ h, p, jbstat, critval
 % Rechazamos la hipótesis de normalidad para todas las series
 
 %% Gráficos de los residuos
-nombre = ["EURO-US","Repsol","crudo"];
 for i = 1:length(estimacion)
-    figure(2+i);
+    figure(3+i);
     subplot(2,2,1);
     plot(resstd(:,i));
     title(['Residuos estandarizados de', nombre(i)]);
@@ -165,7 +175,7 @@ h, p, jbstat, critval
 
 %% Gráficas
 for i = 1:length(estimacion)
-    figure(5+i);
+    figure(6+i);
     subplot(2,2,1);
     plot(resstd(:,i));
     title(['Residuos estandarizados de', nombre(i)]);
@@ -259,7 +269,7 @@ end
 % Gráfica
 M = round(1.5*N); % Puntos a mostrar
 for i = 1:length(estimacion)
-    figure(8);
+    figure(10);
     subplot(3,1,i);
     plot(ldata(end-M:end,i),'Color',[.7,.7,.7]);
     hold on
@@ -285,7 +295,7 @@ for i = 1:length(estimacion)
 end
 
 for i = 1:length(estimacion)
-    figure(9);
+    figure(11);
     subplot(3,1,i);
     plot(ldata(end-M:end,i),'Color',[.7,.7,.7]);
     hold on
@@ -303,7 +313,7 @@ end
 %% Comparación valores reales
 ldata_all = 100*log(data);
 for i = 1:length(estimacion)
-    figure(10);
+    figure(12);
     subplot(3,1,i);
     plot(ldata_all(end-M-N:end,i));
     title(['Valor real del ' nombre(i)])
@@ -314,7 +324,7 @@ err_rel = zeros(N,length(estimacion));
 for i = 1:length(estimacion)
     err_rel(:,i) = 100*abs(ldata_f(:,i) - ldata_all(end-N+1:end,i))./...
         abs(ldata_all(end-N+1:end,i)) ;
-    figure(11);
+    figure(13);
     subplot(3,1,i);
     plot(1:N,err_rel(:,i))
     title(['Error relativo del ' nombre(i) 'en %'])
@@ -377,7 +387,7 @@ crude = crude(1:end-N);
 
 %% Manipulación de los datos
 % Estudiamos su ACF y PACF
-figure(11);
+figure(13);
 subplot(3,2,1)
 autocorr(eurous,20);
 title('ACF del log del EURO-US');
@@ -449,7 +459,7 @@ h, p, jbstat, critval
 %% Gráficos de los residuos
 nombre = ["EURO-US","Repsol","crudo"];
 for i = 1:length(estimacion2)
-    figure(12+i);
+    figure(13+i);
     subplot(2,2,1);
     plot(resstd(:,i));
     title(['Residuos estandarizados de', nombre(i)]);
@@ -507,7 +517,7 @@ h, p, jbstat, critval
 
 %% Gráficas
 for i = 1:length(estimacion2)
-    figure(15+i);
+    figure(16+i);
     subplot(2,2,1);
     plot(resstd(:,i));
     title(['Residuos estandarizados de', nombre(i)]);
@@ -604,7 +614,7 @@ end
 % Gráfica
 M = round(1.5*N); % Puntos a mostrar
 for i = 1:length(estimacion2)
-    figure(19);
+    figure(20);
     subplot(3,1,i);
     plot(data_N(end-M:end,i),'Color',[.7,.7,.7]);
     hold on
@@ -630,7 +640,7 @@ for i = 1:length(estimacion2)
 end
 
 for i = 1:length(estimacion2)
-    figure(20);
+    figure(21);
     subplot(3,1,i);
     plot(data_N(end-M:end,i),'Color',[.7,.7,.7]);
     hold on
@@ -647,7 +657,7 @@ end
 
 %% Comparación valores reales
 for i = 1:length(estimacion2)
-    figure(21);
+    figure(22);
     subplot(3,1,i);
     plot(data(end-M-N:end,i));
     title(['Valor real del ' nombre(i)])
@@ -658,7 +668,7 @@ err_rel = zeros(N,length(estimacion2));
 for i = 1:length(estimacion2)
     err_rel(:,i) = 100*abs(data_f(:,i) - data(end-N+1:end,i))./...
         abs(data(end-N+1:end,i)) ;
-    figure(11);
+    figure(23);
     subplot(3,1,i);
     plot(1:N,err_rel(:,i))
     title(['Error relativo del ' nombre(i) 'en %'])
@@ -702,7 +712,7 @@ for i = 1:length(estimacion)
     TIC2(i) = RMSE(i) / (mean(data_f(:,i).^2) * ...
         mean(data(end-N+1:end,i).^2));
 end
-%%%%%%%%TIC%%%%%%%
+%%%%%%%%TIC%%%%%%%%
 % EURO-US : 0.0066
 % Repsol  : 0.0000    
 % Crude   : 0.0000
@@ -723,7 +733,7 @@ var_dbar = (1/N)*(gamma0 + 2*sum(vgamman));
 DM = dbar/(var_dbar^0.5)
 p_value = 2*(1-normcdf(abs(DM),0,1))
 % Rechazamos la H_0: esto quiere decir que los modelos no tienen la misma
-% capacidad predictiva.
+% capacidad predictiva. 
 
 %% Vamos a comparar los estadísticos:
 
