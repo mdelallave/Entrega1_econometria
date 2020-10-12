@@ -9,7 +9,7 @@ clc
 % En el mac no me va la función de importar datos con xlsread. Probad si
 % funciona.
 %% Hacemos un gráfico con GPD
-gdpc = GDPC1(1:end-2,2);
+gdpc = GDPC1(1:end-1,2);
 figure(1);
 plot(gdpc);
 title('gdpc');
@@ -78,7 +78,7 @@ IC = [1 - 1.96*0.014479/(sqrt(288)); 1 + ...
 
 % Como la muestra es grande suponemos normalidad. El valor estimado de 
 % theta no cae dentro del IC.
-% Rechazamos la hipotesis nula y nos quedamos con que la segunda
+% Rechazamos la hipotesis nula y suponemos que la segunda
 % diferencia es significativa.
 %% Modelo 1
 % Empezamos con un modelo ARIMA(1,1,1)
@@ -130,7 +130,7 @@ subplot(2,2,3);
 autocorr(resstd3,20);
 subplot(2,2,4);
 parcorr(resstd3,20);
-% Encontramos estructura en el lag 6.
+% Encontramos algo de estructura en el lag 6.
 %% Modelo 4
 modelo4 = arima('Constant',0,'ARlags',[1,5,6,12], 'MAlags',[1,2,5,6,12], ...
     'D',[2]);
@@ -160,9 +160,11 @@ estmodelo5 = estimate(modelo5,lgdpc);
 % Los siguientes no son significativos:
 % AR(17), MA(12), 
 %% Modelo 6
-modelo6 = arima('Constant',0,'ARlags',[1,5,6,12], 'MAlags',[1,2,5,6,9,17], ...
+modelo6 = arima('Constant',0,'ARlags',[1,5,6,12], 'MAlags',[1,2,5,6,9], ...
     'D',[2]);
 estmodelo6 = estimate(modelo6,lgdpc); 
+% El MA(17) sale no significativo al 5%, por tanto lo quitamos y volvemos a
+% estimar el modelo.
 %% Hacemos inferencia modelo 6
 [res6,varres6,logL6] = infer(estmodelo6,lgdpc); %inferencia sobre el modelo.
 resstd6 = res6/sqrt(estmodelo6.Variance);
@@ -179,8 +181,11 @@ subplot(2,2,3);
 autocorr(resstd6,20);
 subplot(2,2,4);
 parcorr(resstd6,20);
+%% EL modelo que mejor explica es el modelo 3. Usamos ese modelo para 
+% hacer las predicciones.
+
 %% Hacemos una predicción al 99%
-[lgdpc_f,dt_errorf] = forecast(estmodelo6,2,'Y0',lgdpc);
+[lgdpc_f,dt_errorf] = forecast(estmodelo3,2,'Y0',lgdpc);
 b_inferior = lgdpc_f - 2.3263*sqrt(dt_errorf);
 b_superior = lgdpc_f + 2.3263*sqrt(dt_errorf);
 figure(8);
@@ -194,5 +199,17 @@ legend([h1 h2],'Intervalo al 99% de confianza','Predicción puntual',...
 title('Predicción del PIB PC de EEUU a cierre de año')
 hold off
 
+%% Calculamos la probabilidad de que el crecimiento del PIB sea menor que
+% el 1% en el tercer trimestre.
+% Primero, declaramos la media y la desviación tipica de la variación de
+% lgdpc. Esto es la primera diferencia de lgdpc
 
+media_est = lgdpc_f(2,1) - lgdpc_f(1,1);
+std_est =  dt_errorf(2,1) + dt_errorf(1,1);
+
+% Aplicamos la normalización:
+X = (0.01 - media_est) / std_est;
+
+% Calculamos la probabilidad asociada a X
+P = normpdf(X)
 
