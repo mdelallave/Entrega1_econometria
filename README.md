@@ -8,4 +8,4 @@ Carlos Alonso Orts
 Manuel de la Llave
 Diego Huélamo
 
-El trabajo se realiza mediante LaTeX (compilador usado XeLaTeX) y con el paquete mcode personalizado, también incluido en el repositorio. En las carpetas se pueden encontrar los scripts de MatLab empleados.
+El trabajo se realiza mediante LaTeX (compilador usado XeLaTeX) y con el paquete mcode personalizado, también incluido en el repositorio. En las carpetas se pueden encontrar los scripts de MatLab empleados. Para el ejercicio 2, el script principal es ejercicio2.m; también es necesario el fichero data.csv para su replicación.
