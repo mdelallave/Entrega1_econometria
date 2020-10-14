@@ -380,360 +380,141 @@ end
 
 %% SEGUNDA PARTE
 % Datos menos N observaciones
-data_N = data(1:end-N,:);
-eurous = eurous(1:end-N); 
-repsol = repsol(1:end-N);
-crude = crude(1:end-N); 
+dataN = data(1:end-N,:); eurousN = eurous(1:end-N); 
 
-%% Manipulación de los datos
-% Estudiamos su ACF y PACF
-figure(13);
-subplot(3,2,1)
-autocorr(eurous,20);
-title('ACF del log del EURO-US');
-subplot(3,2,2)
-parcorr(eurous,20);
-title('PACF del log del EURO-US');
-
-subplot(3,2,3);
-autocorr(repsol,20);
-title('ACF del log de Repsol');
-subplot(3,2,4);
-parcorr(repsol,20);
-title('PACF del log de Repsol');
-
-subplot(3,2,5);
-autocorr(crude,20);
-title('ACF del log del crudo');
-subplot(3,2,6);
-parcorr(crude,20);
-title('PACF del log del crudo');
-% Necesitamos tomar diferencias: ACF decrece lenta y linealmente
-
-%% Tomamos diferencias
-deurous = eurous(2:end)-eurous(1:end-1);
-drepsol = repsol(2:end)-repsol(1:end-1);
-dcrude = crude(2:end)-crude(1:end-1);
-ddata = data_N(2:end,:)-data_N(1:end-1,:);
-
-figure(12);
-subplot(3,2,1)
-autocorr(deurous,20);
-title('ACF del rendimiento del EURO-US');
-subplot(3,2,2)
-parcorr(deurous,20);
-title('PACF del rendimiento del EURO-US');
-
-subplot(3,2,3);
-autocorr(drepsol,20);
-title('ACF del rendimiento de Repsol');
-subplot(3,2,4);
-parcorr(drepsol,20);
-title('PACF del rendimiento de Repsol');
-
-subplot(3,2,5);
-autocorr(dcrude,20);
-title('ACF del rendimiento del crudo');
-subplot(3,2,6);
-parcorr(dcrude,20);
-title('PACF del rendimiento del crudo');
-%% Modelo
-% Planteamos inicialmente un modelo ARIMA(1,1,1)
-
-for i = 1:length(data(1,:))
-    estimacion2(i) = estimate(arima(1,1,1),data_N(:,i));
+% Número de lags de cada modelo
+for i = 1:length(estimacion)
+    P(i) = length(estimacion(i).AR);
+    Q(i) = length(estimacion(i).MA);
 end
-% EURO-US y Repsol ningún parámetro significativo, Crude cte. no
-% significativa
+max_lags = max(max(P,Q));
 
-%% Análisis de los residuos
+% Inicialización de variables
+const = zeros(1,length(estimacion));
+ar_parameters = zeros(max(P),length(estimacion));
+ma_parameters = zeros(max(Q),length(estimacion));
+var = zeros(1,length(estimacion));
+epsilon = zeros(N,length(estimacion));
 
-for i = 1:length(data(1,:))
-    [res(:,i),varres(:,i),logL(i)] = infer(estimacion2(i),data_N(:,i));
-    resstd(:,i) = res(:,i)/sqrt(estimacion2(i).Variance);
-    [h(i),p(i),jbstat(i),critval(i)] = jbtest(resstd(:,i),alpha);
+% Expresión matricial de todos los parámetros de nuestros modelos y de la
+% varianza. Cada columna corresponde a una serie temporal.
+for i = 1:length(estimacion)
+    const(i) = estimacion(i).Constant;
+    ar = estimacion(i).AR;
+    ma = estimacion(i).MA;
+    ar = cell2mat(ar);
+    ma = cell2mat(ma);
+    ar_parameters(:,i) = [ar(1:end), zeros(1,max(P)-length(ar))];
+    ma_parameters(:,i) = [ma(1:end), zeros(1,max(Q)-length(ma))];
+    var(i) = estimacion(i).Variance;
+    epsilon(:,i) = normrnd(0,sqrt(var(i)),1,N);
+    [res(:,i),varres(:,i),logL(i)] = infer(estimacion(i),ldata(:,i));
 end
-h, p, jbstat, critval
-% Rechazamos la hipótesis de normalidad para todas las series
+ar_parameters = flip(ar_parameters)/100; % Le damos la vuelta
+ma_parameters = flip(ma_parameters)/100;
 
-%% Gráficos de los residuos
-nombre = ["EURO-US","Repsol","crudo"];
-for i = 1:length(estimacion2)
-    figure(13+i);
-    subplot(2,2,1);
-    plot(resstd(:,i));
-    title(['Residuos estandarizados de', nombre(i)]);
-    
-    subplot(2,2,2);
-    histogram(resstd(:,i),20);
-    title(['Residuos estandarizados de ', nombre(i)]);
-    
-    subplot(2,2,3);
-    autocorr(resstd(:,i),20);
-    
-    subplot(2,2,4);
-    parcorr(resstd(:,i),20);
-end
+% A los residuos que ya teníamos, le añadimos las siguientes 100 
+% innovaciones N~(0,var(i))
+eps_total = [res; epsilon]; 
 
-% Comprobación de los residuos
-
-for i = 1:length(estimacion2)
-    significativos_ma(:,i) = abs(autocorr(resstd(:,i))) > banda_confianza;
-    lags_significativos_ma(:,i) = IND'.*significativos_ma(2:end,i);
-    significativos_ar(:,i) = abs(parcorr(resstd(:,i))) > banda_confianza;
-    lags_significativos_ar(:,i) = IND'.*significativos_ar(2:end,i);
-end
-lags_significativos_ar
-lags_significativos_ma
-% EURO-US: AR(6) y MA(6)
-% Repsol : AR([3,5,17,18]) y MA([3,5,17,18])
-% Crude  : AR([4,5,12,20]) y MA([4,5,12,20])
-
-%% Reajustamos el modelo
-% Eliminamos la constante en todos porque sale no significativa.
-% EURO-US
-estimacion2(1) = estimate(arima('Constant',0,'ARlags',6,'MAlags',6,...
-                'D',1),data_N(:,1));
-            
-% Repsol
-estimacion2(2) = estimate(arima('Constant',0,'ARlags',[3,5,17,18],'MAlags',...
-                [3,5,17,18],'D',1),data_N(:,2));
-
-% Crude            
-estimacion2(3) = estimate(arima('Constant',0,'ARlags',[4,5,12,20],...
-                'MAlags',[4,5,12,20],'D',1),data_N(:,3)); 
-
-% EURO-US y Crude todos parámetros significativos. Repsol no significativos
-% AR([3,18]) y MA([3,5,18]).
-%% Volvemos a estudiar los residuos
-
-for i = 1:length(data(1,:))
-    [res(:,i),varres(:,i),logL(i)] = infer(estimacion2(i),data_N(:,i));
-    resstd(:,i) = res(:,i)/sqrt(estimacion2(i).Variance);
-    [h(i),p(i),jbstat(i),critval(i)] = jbtest(resstd(:,i),alpha);
-end
-h, p, jbstat, critval
-% Rechazamos la hipótesis de normalidad para todas las series
-
-%% Gráficas
-for i = 1:length(estimacion2)
-    figure(16+i);
-    subplot(2,2,1);
-    plot(resstd(:,i));
-    title(['Residuos estandarizados de', nombre(i)]);
-    
-    subplot(2,2,2);
-    histogram(resstd(:,i),20);
-    title(['Residuos estandarizados de ', nombre(i)]);
-    
-    subplot(2,2,3);
-    autocorr(resstd(:,i),20);
-    
-    subplot(2,2,4);
-    parcorr(resstd(:,i),20);
-end
-
-% Comprobación de los residuos
-for i = 1:length(estimacion2)
-    significativos_ma(:,i) = abs(autocorr(resstd(:,i))) > banda_confianza;
-    lags_significativos_ma(:,i) = IND'.*significativos_ma(2:end,i);
-    significativos_ar(:,i) = abs(parcorr(resstd(:,i))) > banda_confianza;
-    lags_significativos_ar(:,i) = IND'.*significativos_ar(2:end,i);
-end
-lags_significativos_ar
-lags_significativos_ma
-
-% EURO-US ruido blanco. Repsol significativo en AR([1,2]) y MA(1). 
-% Crude en AR([1,2]) y MA([1,2]).
-
-%% Reajustamos el modelo
-
-% Repsol
-estimacion2(2) = estimate(arima('Constant',0,'ARlags',[1,2,5,17],'MAlags',...
-                [1,17],'D',1),data(:,2));
-
-% Crude            
-estimacion2(3) = estimate(arima('Constant',0,'ARlags',[1,2,4,5,12,20],...
-                'MAlags',[1,2,4,5,12,20],'D',1),data(:,3)); 
-
-for i = 1:length(estimacion2)
-    significativos_ma(:,i) = abs(autocorr(resstd(:,i))) > banda_confianza;
-    lags_significativos_ma(:,i) = IND'.*significativos_ma(2:end,i);
-    significativos_ar(:,i) = abs(parcorr(resstd(:,i))) > banda_confianza;
-    lags_significativos_ar(:,i) = IND'.*significativos_ar(2:end,i);
-end
-lags_significativos_ar
-lags_significativos_ma
-
-% Parámetros no significativos: 
-% Repsol: MA(1)
-% Crude : AR([1,2]) y MA([1,2]). 
-% Respecto a los residuos, Repsol sigue siendo significativo en AR([1,2])
-% y MA(1). Crudo en AR([1,2]) y MA([1,2]) a pesar de incluir los retardos.
-
-%% Reajustamos el modelo
-
-% Repsol
-estimacion2(2) = estimate(arima('Constant',0,'ARlags',[1,2,5,17],'MAlags',...
-                [17],'D',1),data(:,2));
-
-% Crude            
-estimacion2(3) = estimate(arima('Constant',0,'ARlags',[4,5,12,20],...
-                'MAlags',[4,5,12,20],'D',1),data(:,3)); 
-
-for i = 1:length(estimacion2)
-    significativos_ma(:,i) = abs(autocorr(resstd(:,i))) > banda_confianza;
-    lags_significativos_ma(:,i) = IND'.*significativos_ma(2:end,i);
-    significativos_ar(:,i) = abs(parcorr(resstd(:,i))) > banda_confianza;
-    lags_significativos_ar(:,i) = IND'.*significativos_ar(2:end,i);
-end
-lags_significativos_ar
-lags_significativos_ma
-
-% Todos los parámetros son significativos excepto Repsol AR(2).
-% Respecto a los residuos, Repsol sigue siendo significativo en AR([1,2])
-% y MA(1). Crudo en AR([1,2]) y MA([1,2]) a pesar de incluir los retardos.
-
-%% Último ajuste
-% Repsol
-estimacion2(2) = estimate(arima('Constant',0,'ARlags',[1,5,17],'MAlags',...
-                [17],'D',1),data(:,2));
-            
 %% Predicción y bandas de confianza
-% Predicción estática (a 1 día)
-for i = 1:length(estimacion2)
-    for j = 1:N
-        [data_f(j,i),dt_errorf(j,i)] = forecast(estimacion2(i),1,'Y0',...
-            data_N(:,i));
-        b_inferior(j,i) = data_f(j,i) - Z*sqrt(dt_errorf(j,i));
-        b_superior(j,i) = data_f(j,i) + Z*sqrt(dt_errorf(j,i));
-        data_N = data(1:end-N+j,:);
+%Inicialización de variables
+data_f = zeros(N + max_lags + 1, length(estimacion));
+b_inferior_precios = zeros(N,length(estimacion));
+b_superior_precios = zeros(N,length(estimacion));
+
+for i = 1:length(estimacion)
+    data_f(1:max_lags+1,i) = dataN(end-max_lags:end,i);
+    for j = max_lags+1:N+max_lags
+        data_f(j+1,i) = exp((log(data_f(j,i)) + 1/100 * (const(i) + ...
+            ar_parameters(:,i)' * (log(data_f(j-max_lags+1:j,i)) - ...
+            log(data_f(j-max_lags:j-1,i))) - ma_parameters(:,i)' * ...
+            eps_total(end-N-2*max_lags+j:end-N-max_lags+j-1,i)))+1/2e4*var(i));
+        b_inferior_precios(j-max_lags,i) = data_f(j+1,i) - Z*sqrt(var(i));
+        b_superior_precios(j-max_lags,i) = data_f(j+1,i) + Z*sqrt(var(i));
     end
-    data_N = data(1:end-N,:);
 end
 % Gráfica
 M = round(1.5*N); % Puntos a mostrar
-for i = 1:length(estimacion2)
-    figure(20);
+for i = 1:length(estimacion)
+    figure(14);
     subplot(3,1,i);
-    plot(data_N(end-M:end,i),'Color',[.7,.7,.7]);
+    plot(dataN(end-M:end,i),'Color',[.7,.7,.7]);
     hold on
-    h1 = plot(length(data_N(end-M:end,i)):(N-1+length(data_N(end-M:end,i))),...
-        b_inferior(:,i),'r:','LineWidth',2);
-    plot(length(data_N(end-M:end,i)):(N-1+length(data_N(end-M:end,i))),...
-        b_superior(:,i),'r:','LineWidth',2)
-    h2 = plot(length(data_N(end-M:end,i)):(N-1+length(data_N(end-M:end,i))),...
-        data_f(:,i),'k','LineWidth',2);
+    h1 = plot(length(dataN(end-M:end,i)):(N-1+length(dataN(end-M:end,i))),...
+        b_inferior_precios(:,i),'r:','LineWidth',2);
+    plot(length(dataN(end-M:end,i)):(N-1+length(dataN(end-M:end,i))),...
+        b_superior_precios(:,i),'r:','LineWidth',2)
+    h2 = plot(length(dataN(end-M:end,i)):(N-1+length(dataN(end-M:end,i))),...
+        data_f(max_lags+2:end,i),'k','LineWidth',2);
       legend([h1 h2], a, 'Predicción a 1 día', 'Location','NorthWest')
     title(['Predicción estática del ' nombre(i)])
     hold off
 end
 
-%% Predicción dinámica (a k días, con k = 1,2,...,N)
-data_f2 = zeros(N,length(estimacion2)); 
-dt_errorf2 = zeros(N,length(estimacion2));
-for i = 1:length(estimacion2)
-    [data_f2(:,i),dt_errorf2(:,i)] = forecast(estimacion2(i),N,'Y0',...
-        data_N(:,i));
-    b_inferior(:,i) = data_f2(:,i) - Z*sqrt(dt_errorf2(:,i));
-    b_superior(:,i) = data_f2(:,i) + Z*sqrt(dt_errorf2(:,i));
-end
-
-for i = 1:length(estimacion2)
-    figure(21);
-    subplot(3,1,i);
-    plot(data_N(end-M:end,i),'Color',[.7,.7,.7]);
-    hold on
-    h1 = plot(length(data_N(end-M:end,i)):(N-1+length(data_N(end-M:end,i))),...
-        b_inferior(:,i),'r:','LineWidth',2);
-    plot(length(data_N(end-M:end,i)):(N-1+length(data_N(end-M:end,i))),...
-        b_superior(:,i),'r:','LineWidth',2)
-    h2 = plot(length(data_N(end-M:end,i)):(N-1+length(data_N(end-M:end,i))),...
-        data_f2(:,i),'k','LineWidth',2);
-      legend([h1 h2], a, 'Predicción puntual', 'Location','NorthWest')
-    title(['Predicción dinámica del ' nombre(i)])
-    hold off
-end
-
 %% Comparación valores reales
-for i = 1:length(estimacion2)
-    figure(22);
+for i = 1:length(estimacion)
+    figure(15);
     subplot(3,1,i);
     plot(data(end-M-N:end,i));
     title(['Valor real del ' nombre(i)])
 end
 
-% Error predicción
-err_rel = zeros(N,length(estimacion2));
-for i = 1:length(estimacion2)
-    err_rel(:,i) = 100*abs(data_f(:,i) - data(end-N+1:end,i))./...
-        abs(data(end-N+1:end,i)) ;
-    figure(23);
+%% Error predicción
+err_rel = zeros(N,length(estimacion));
+for i = 1:length(estimacion)
+    err_rel(:,i) = 100*abs(data_f(max_lags+2:end,i) - ...
+        data(end-N+1:end,i))./ abs(data(end-N+1:end,i)) ;
+    figure(16);
     subplot(3,1,i);
     plot(1:N,err_rel(:,i))
     title(['Error relativo del ' nombre(i) 'en %'])
 end
 
-%% Bondad de ajuste de la predicción. Predicción estática.
+%% Bondad de ajuste de la predicción (precios). Predicción estática.
 
-RMSE2 = zeros(1,length(estimacion2)); % Root Mean Squared Error
-for i = 1:length(estimacion2)
-    RMSE2(i) = sqrt(mean((data(end-N+1:end,i) - data_f(:,i)).^2));
+RMSE2 = zeros(1,length(estimacion)); % Root Mean Squared Error
+for i = 1:length(estimacion)
+    RMSE2(i) = sqrt(mean((data(end-N+1:end,i) - ...
+        data_f(max_lags+2:end,i)).^2));
 end
 %%%%%%%%RMSE%%%%%%%
-% EURO-US : 0.0020
-% Repsol  : 0.2006    
-% Crude   : 0.9789
+% EURO-US : 0.0182
+% Repsol  : 0.7094   
+% Crude   : 6.2105
 %%%%%%%%%%%%%%%%%%%
 
-MAE2 = zeros(1,length(estimacion2)); % Mean Absolute Error 
-for i = 1:length(estimacion2)
-    MAE2(i) = mean(abs(data(end-N+1:end,i) - data_f(:,i)));
+MAE2 = zeros(1,length(estimacion)); % Mean Absolute Error 
+for i = 1:length(estimacion)
+    MAE2(i) = mean(abs(data(end-N+1:end,i) - data_f(max_lags+2:end,i)));
 end
 %%%%%%%%MAE%%%%%%%%
-% EURO-US : 0.0014
-% Repsol  : 0.1417    
-% Crude   : 0.7202
+% EURO-US : 0.0146
+% Repsol  : 0.5639   
+% Crude   : 4.4280
 %%%%%%%%%%%%%%%%%%%
 
 MAPE2 = zeros(1,length(estimacion)); % Mean Absolute Percentage Error 
 for i = 1:length(estimacion)
-    MAPE2(i) = 100*mean(abs((data(end-N+1:end,i) - data_f(:,i)) ./...
-        data(end-N+1:end,i)));
+    MAPE2(i) = 100*mean(abs((data(end-N+1:end,i) - ...
+        data_f(max_lags+2:end,i)) ./ data(end-N+1:end,i)));
 end
 %%%%%%%%MAPE%%%%%%%
-% EURO-US : 0.1955
+% EURO-US : 1.9637
 % Repsol  : 0.7453    
 % Crude   : 0.7212
 %%%%%%%%%%%%%%%%%%%
 
 TIC2 = zeros(1,length(estimacion)); % Theil Inequality Coefficient 
 for i = 1:length(estimacion)
-    TIC2(i) = RMSE(i) / (mean(data_f(:,i).^2) * ...
+    TIC2(i) = RMSE(i) / (mean(data_f(max_lags+2:end,i).^2) * ...
         mean(data(end-N+1:end,i).^2));
 end
 %%%%%%%%TIC%%%%%%%%
-% EURO-US : 0.0066
-% Repsol  : 0.0000    
-% Crude   : 0.0000
+% EURO-US : 0.9193
+% Repsol  : 8 e-06  
+% Crude   : 8 e-09
 %%%%%%%%%%%%%%%%%%%
-
-%% Diebold y Mariano
-
-error1 = ldata_all(end-N+1:end,i) - ldata_f(:,i);
-error2 = data(end-N+1:end,i) - data_f(:,i);
-d = abs(error1)-abs(error2);
-dbar = mean(d);
-gamma0 = var(d);
-N_cov = round(N^(1/3)-0.5)+1;
-[acf,lags,bounds] = autocorr(d,N_cov);
-vgamman = acf(2:end-1,1) * gamma0;
-var_dbar = (1/N)*(gamma0 + 2*sum(vgamman));
-
-DM = dbar/(var_dbar^0.5)
-p_value = 2*(1-normcdf(abs(DM),0,1))
-% Rechazamos la H_0: esto quiere decir que los modelos no tienen la misma
-% capacidad predictiva. 
 
 %% Vamos a comparar los estadísticos:
 
@@ -743,9 +524,9 @@ MAPE_comparacion = MAPE > MAPE2
 TIC_comparacion = TIC > TIC2
 
 % Tanto el RMSE como el MAE de los rendimientos es mayor que si tratamos
-% las series en precios, mientras que en el MAPE sólo es así para el tipo
-% de cambio EURO-US y para el TIC es al contrario.
-% Dado que el RMSE mide la variabilidad que tienen los errores de previsión
-% y con el MAE podemos comparar dos modelos diferentes, podemos decir la
-% predicción del modelo cuando usamos precios es más acertada que cuando
-% usamos rendimientos.
+% las series en precios excepto para el Crude en el MAE. Sin embargo es al
+% revés si usamos el MAPE y el TIC.
+
+% Dado que el RMSE mide la variabilidad que tienen los errores de previsión,
+% podemos decir que la predicción del modelo cuando usamos precios es más 
+% acertada que cuando usamos rendimientos.
