@@ -4,20 +4,19 @@ clearvars
 clc
 
 %% Importar datos
-% data = csvread('GDPC1.csv');
-% GPD = data; 
-% En el mac no me va la función de importar datos con xlsread. Probad si
-% funciona.
-%% Hacemos un gráfico con GPD
-gdpc = GDPC1(1:end-1,2);
+data = xlsread('GDPC1.xlsx','A12:B303');
+
+%% Hacemos un gráfico con GDPC
+gdpc = data(1:end-1,2);
 figure(1);
 plot(gdpc);
-title('gdpc');
+title('GDPC');
 %% Particionamos la muestra en 100 submuestras, 
 % y hacemos el grafico media desviacion tipica
-part=100;
+part = 10;
 [med,dtip] = graf_m_std(gdpc,part);
-% Los datos en nivel no presentan estacionariedad
+% Podemos comprobar observando el gráfico media varianza como hay
+% estacionariedad en varianza. Necesitamos aplicar logaritmos.
 
 %% Manipulación de los datos
 % Transformación logarítmica (rendimientos)
@@ -26,147 +25,234 @@ plot(lgdpc)
 
 % Estudiamos su estacionariedad
 figure(2);
-subplot(2,1,1);
+subplot(3,1,1)
+plot(lgdpc)
+title('Tasa de variación logarítmica de GPDC (lGPDC)');
+subplot(3,1,2);
 autocorr(lgdpc,20);
-title('ACF del log del GDPC');
-subplot(2,1,2);
+title('ACF del log del lGDPC');
+subplot(3,1,3);
 parcorr(lgdpc,20); 
-title('PACF del log del GDPC');
+title('PACF del log del lGDPC');
 
 % Vemos como la ACF toma valores muy altos que no tienden a desaparecer.
-% Indica ausencia de estacionariedad en varianza.
+% Indica ausencia de estacionariedad en media. Aplicamos diferencias.
 
 %% Tomamos primeras diferencias
 dlgdpc=lgdpc(2:end)-lgdpc(1:end-1);
 figure(3)
+subplot(3,1,1)
 plot(dlgdpc);
-title('Tasa de variación de LGPDC');
-figure(4)
-subplot(2,1,1);
+title('Tasa de variación de dlGPDC');
+subplot(3,1,2);
 autocorr(dlgdpc,20); 
-title('ACF de la tasa de variación de LGPDC');
-subplot(2,1,2);
+title('ACF de la tasa de variación de dlGPDC');
+subplot(3,1,3);
 parcorr(dlgdpc,20);
-title('PACF de la tasa de variación de LGPDC');
-% LA ACF ya no presenta valores positivos. La serie ya presenta
-% estacionariedad.
+title('PACF de la tasa de variación de dlGPDC');
+% La gráfica no presenta una clara estacionariedad en media. Por ello,amos a
+% plantear segundas diferencias y contrastar si es significativa o no.
 
 %% tomamos segundas diferencias 
-d2lgdpc=lgdpc(3:end)-lgdpc(1:end-2);
+d2lgdpc=dlgdpc(2:end) - dlgdpc(1:end-1);
 figure(4);
-plot(d2lgdpc);
-title('Tasa de variación de D2LGPDC');
-
-figure(5);
 subplot(2,1,1);
 autocorr(d2lgdpc,20); 
-title('ACF de la tasa de variación de D2LGPDC');
+title('ACF de la tasa de variación de d2lGPDC');
 subplot(2,1,2);
 parcorr(d2lgdpc,20);
-title('PACF de la tasa de variación de D"LGPDC');
+title('PACF de la tasa de variación de d2lGPDC');
 
 %% Comprobamos si la 2º diferencia es significativa
 % Estimamos un MA(1)
 modelo_contraste=arima(0,0,1);
 estmdl=estimate(modelo_contraste,d2lgdpc);
 theta = estmdl.MA;
-% El error estandar de theta es 0.014479.
+
+% ARIMA(0,0,1) Model (Gaussian Distribution):
+%  
+%                  Value      StandardError    TStatistic      PValue  
+%                 ________    _____________    __________    __________
+% 
+%     Constant    0.001511      0.017851        0.084645        0.93254
+%     MA{1}       -0.68666       0.03799         -18.075     5.0513e-73
+%     Variance     0.87699      0.056331          15.569      1.191e-54
+
 
 % Contruimos el IC al 95%
-IC = [1 - 1.96*0.014479/(sqrt(288)); 1 + ...
-    1.96*0.014479/(sqrt(288))]
+IC = [-0.68666 - 1.96*0.03799/(sqrt(288)); -0.68666 + ...
+    1.96*0.03799/(sqrt(288))]
 
-% Como la muestra es grande suponemos normalidad. El valor estimado de 
-% theta no cae dentro del IC.
+% Como T es grande, suponemos normalidad sin pérdida de generalidad.
+% El valor estimado de theta no cae dentro del IC.
 % Rechazamos la hipotesis nula y suponemos que la segunda
 % diferencia es significativa.
 %% Modelo 1
-% Empezamos con un modelo ARIMA(1,1,1)
-
-modelo1=arima(1,2,1);
+modelo1=arima('ARlags',[1,5,8,9,13,15], 'MAlags', ...
+    [1,15], 'D',[2]);
 estmodelo1=estimate(modelo1,lgdpc); 
-% Al estimar el modelo encontramos que la constante no es significativa.
 
-%% Hacemos inferencia
-[res1,varres1,logL1] = infer(estmodelo1,lgdpc); %inferencia sobre el modelo.
-resstd1 = res1/sqrt(estmodelo1.Variance);
-[h,p,jbstat,critval]=jbtest(resstd1,0.01) 
-% h=1 -> rechazo normalidad.
-figure(6);
-subplot(2,2,1);
-plot(resstd1); 
-title('Residuos estandarizados modelo 1');
-subplot(2,2,2);
-histogram(resstd1,20);
-title('Residuos Estandarizados modelo2')
-subplot(2,2,3);
-autocorr(resstd1,20);
-subplot(2,2,4);
-parcorr(resstd1,20);
-% Viendo la ACF y la PACF, encontramos estructura en lag`s 2, 5, 12.
+%  ARIMA(15,2,15) Model (Gaussian Distribution):
+%  
+%                   Value       StandardError    TStatistic      PValue   
+%                 __________    _____________    __________    ___________
+% 
+%     Constant    0.00023656      0.0063541        0.03723          0.9703
+%     AR{1}          0.22963       0.062969         3.6467      0.00026564
+%     AR{5}         -0.20541       0.060284        -3.4074      0.00065577
+%     AR{8}        -0.083619       0.055619        -1.5034         0.13273
+%     AR{9}         0.024918       0.052958        0.47052         0.63798
+%     AR{13}        -0.19991       0.055709        -3.5884      0.00033273
+%     AR{15}       -0.050871       0.063279       -0.80391         0.42145
+%     MA{1}         -0.87086       0.036652         -23.76     8.6317e-125
+%     MA{15}       -0.026442        0.03795       -0.69676         0.48595
+%     Variance       0.75928       0.052296         14.519      9.1758e-48
+% Observando el PValue, la constante no es significativa al 5%. 
+% Además, encontramos que el AR(8), el AR(9), el AR(15) y el MA(15) tampoco
+% son significativos al 5%.
+
+%% Comparación gráfica de la estacionariedad en segundas diferencias
+% respecto a primera diferencias.
+figure;
+subplot(2,1,1)
+plot(dlgdpc)
+title('Serie temporal en primeras diferencias')
+subplot(2,1,2)
+plot(d2lgdpc)
+title('Serie temporal en segundas diferencias')
 
 %% Modelo 2
-modelo2 =arima('Constant',0,'ARlags',[1,2,5,12], 'MAlags',[1,2,5,12], ...
-    'D',[2]);
+modelo2=arima('Constant',0,'ARlags',[1,5,13], 'MAlags', ...
+    [1], 'D',[2]);
 estmodelo2=estimate(modelo2,lgdpc); 
-% Encontramos que el AR(2) no es significativo.
-%% Modelo 3
-modelo3 = arima('Constant',0,'ARlags',[1,5,12], 'MAlags',[1,2,5,12], ...
-    'D',[2]);
-estmodelo3 = estimate(modelo3,lgdpc); 
-%% Hacemos inferencia
-[res3,varres3,logL3] = infer(estmodelo3,lgdpc); %inferencia sobre el modelo.
-resstd3 = res3/sqrt(estmodelo3.Variance);
-[h,p,jbstat,critval]=jbtest(resstd3,0.01) 
+
+% ARIMA(13,2,1) Model (Gaussian Distribution):
+%  
+%                  Value      StandardError    TStatistic      PValue   
+%                 ________    _____________    __________    ___________
+% 
+%     Constant           0             0            NaN              NaN
+%     AR{1}        0.26328      0.057816         4.5537       5.2704e-06
+%     AR{5}        -0.1822      0.052886        -3.4451       0.00057081
+%     AR{13}       -0.1703      0.049912         -3.412        0.0006449
+%     MA{1}       -0.89085      0.028576        -31.175      2.3016e-213
+%     Variance      0.7675      0.050643         15.155       7.0166e-52
+% observando el Pvalue, todos los parametros son significativos.
+
+%% Hacemos inferencia con el modelo 2
+[res2,varres2,logL2] = infer(estmodelo2,lgdpc);
+resstd2 = res2/sqrt(estmodelo2.Variance);
+[h,p,jbstat,critval]=jbtest(resstd2,0.01) 
 % h=1 -> rechazo normalidad.
 figure(6);
 subplot(2,2,1);
-plot(resstd3); 
-title('Residuos estandarizados modelo 1');
+plot(resstd2); 
+title('Residuos estandarizados modelo 2');
 subplot(2,2,2);
-histogram(resstd3,20);
-title('Residuos Estandarizados modelo2')
+histogram(resstd2,20);
+title('Residuos Estandarizados modelo 2')
 subplot(2,2,3);
-autocorr(resstd3,20);
+autocorr(resstd2,20);
 subplot(2,2,4);
-parcorr(resstd3,20);
-% Encontramos algo de estructura en el lag 6.
+parcorr(resstd2,20);
+% Encontramos estructura en el Lag 12 de la ACF y la PACF, que modelizamos
+% a continuación.
+
+%% Modelo 3
+modelo3 = arima('Constant',0,'ARlags',[1,5,12,13], 'MAlags', ...
+    [1,12], 'D',[2]);
+estmodelo3 =estimate(modelo3,lgdpc); 
+
+%  ARIMA(13,2,12) Model (Gaussian Distribution):
+%  
+%                   Value      StandardError    TStatistic      PValue  
+%                 _________    _____________    __________    __________
+% 
+%     Constant            0             0             NaN            NaN
+%     AR{1}         0.31282      0.057765          5.4153     6.1171e-08
+%     AR{5}        -0.18324      0.055053         -3.3284     0.00087352
+%     AR{12}       -0.24071      0.033125         -7.2666     3.6869e-13
+%     AR{13}      -0.094332      0.052928         -1.7823       0.074704
+%     MA{1}        -0.95629      0.026444         -36.162     2.405e-286
+%     MA{12}      -0.013521      0.022469        -0.60177        0.54733
+%     Variance      0.72386      0.048354           14.97     1.1563e-50
+%
+% Encontramos ahora que el AR(13) y el MA(12) no son significativos al 5%.
 %% Modelo 4
-modelo4 = arima('Constant',0,'ARlags',[1,5,6,12], 'MAlags',[1,2,5,6,12], ...
-    'D',[2]);
-estmodelo4 = estimate(modelo4,lgdpc); 
-%% Hacemos inferencia
-[res4,varres4,logL4] = infer(estmodelo4,lgdpc); %inferencia sobre el modelo.
+modelo4 = arima('Constant',0,'ARlags',[1,5,12], 'MAlags', ...
+    [1], 'D',[2]);
+estmodelo4 =estimate(modelo4,lgdpc); 
+
+% ARIMA(12,2,1) Model (Gaussian Distribution):
+%  
+%                  Value      StandardError    TStatistic      PValue  
+%                 ________    _____________    __________    __________
+% 
+%     Constant           0             0            NaN             NaN
+%     AR{1}        0.34921      0.050133         6.9657      3.2683e-12
+%     AR{5}       -0.14825      0.051914        -2.8556       0.0042951
+%     AR{12}      -0.26652       0.02842        -9.3777      6.7412e-21
+%     MA{1}       -0.97248      0.016614        -58.535               0
+%     Variance     0.73006       0.04726         15.448      7.8052e-54
+% Todos los parametros son significativos al 5%.
+
+%% Hacemos inferencia modelo 4
+[res4,varres4,logL4] = infer(estmodelo4,lgdpc); 
 resstd4 = res4/sqrt(estmodelo4.Variance);
 [h,p,jbstat,critval]=jbtest(resstd4,0.01) 
 % h=1 -> rechazo normalidad.
 figure(6);
 subplot(2,2,1);
 plot(resstd4); 
-title('Residuos estandarizados modelo 1');
+title('Residuos estandarizados modelo 4');
 subplot(2,2,2);
 histogram(resstd4,20);
-title('Residuos Estandarizados modelo2')
+title('Residuos Estandarizados modelo 4')
 subplot(2,2,3);
 autocorr(resstd4,20);
 subplot(2,2,4);
 parcorr(resstd4,20);
-% Encontramos estructura en el lag 9,17.
+% Encontramos estructura en el lag 2 de la ACF y PACF.
 %% Modelo 5
-modelo5 = arima('Constant',0,'ARlags',[1,5,6,12,17], 'MAlags',[1,2,5,6,9,12,17], ...
-    'D',[2]);
-estmodelo5 = estimate(modelo5,lgdpc); 
+modelo5 = arima('Constant',0,'ARlags',[1,2,5,12], 'MAlags', ...
+    [1,2], 'D',[2]);
+estmodelo5 =estimate(modelo5,lgdpc); 
 
-% Los siguientes no son significativos:
-% AR(17), MA(12), 
+% ARIMA(12,2,2) Model (Gaussian Distribution):
+%  
+%                   Value      StandardError    TStatistic      PValue  
+%                 _________    _____________    __________    __________
+% 
+%     Constant            0             0            NaN             NaN
+%     AR{1}          0.6892       0.12196         5.6509      1.5963e-08
+%     AR{2}       -0.077561       0.06219        -1.2472         0.21234
+%     AR{5}        -0.13374      0.044778        -2.9867       0.0028204
+%     AR{12}       -0.21782      0.038721        -5.6252      1.8525e-08
+%     MA{1}         -1.3458       0.11956        -11.257      2.1431e-29
+%     MA{2}         0.36303       0.11707         3.1009       0.0019295
+%     Variance      0.71669      0.048016         14.926      2.2269e-50
+% El AR(2) no es significativo.
+
 %% Modelo 6
-modelo6 = arima('Constant',0,'ARlags',[1,5,6,12], 'MAlags',[1,2,5,6,9], ...
-    'D',[2]);
-estmodelo6 = estimate(modelo6,lgdpc); 
-% El MA(17) sale no significativo al 5%, por tanto lo quitamos y volvemos a
-% estimar el modelo.
+modelo6 = arima('Constant',0,'ARlags',[1,5,12], 'MAlags', ...
+    [1,2], 'D',[2]);
+estmodelo6 =estimate(modelo6,lgdpc); 
+
+% ARIMA(12,2,2) Model (Gaussian Distribution):
+%  
+%                  Value      StandardError    TStatistic      PValue  
+%                 ________    _____________    __________    __________
+% 
+%     Constant           0             0            NaN             NaN
+%     AR{1}        0.56041      0.084238         6.6527      2.8772e-11
+%     AR{5}       -0.14548      0.046555         -3.125       0.0017783
+%     AR{12}      -0.25362      0.026683         -9.505      2.0011e-21
+%     MA{1}        -1.2244      0.096926        -12.632      1.4024e-36
+%     MA{2}        0.24426      0.094931         2.5731         0.01008
+%     Variance      0.7179      0.048214          14.89      3.8299e-50
+% Todo es significativo, hacemos inferencia.
 %% Hacemos inferencia modelo 6
-[res6,varres6,logL6] = infer(estmodelo6,lgdpc); %inferencia sobre el modelo.
+[res6,varres6,logL6] = infer(estmodelo6,lgdpc); 
 resstd6 = res6/sqrt(estmodelo6.Variance);
 [h,p,jbstat,critval]=jbtest(resstd6,0.01) 
 % h=1 -> rechazo normalidad.
@@ -181,35 +267,138 @@ subplot(2,2,3);
 autocorr(resstd6,20);
 subplot(2,2,4);
 parcorr(resstd6,20);
-%% EL modelo que mejor explica es el modelo 3. Usamos ese modelo para 
-% hacer las predicciones.
+% Si analizamos ahora la ACF y la PACF vemos como existe estructura en el 
+% lag 6 de la PACF. 
+%% Modelo 7
+modelo7 = arima('Constant',0,'ARlags',[1,5,12], 'MAlags', ...
+    [1,2,6,12], 'D',[2]);
+estmodelo7 =estimate(modelo7,lgdpc); 
 
-%% Hacemos una predicción al 99%
-[lgdpc_f,dt_errorf] = forecast(estmodelo3,2,'Y0',lgdpc);
-b_inferior = lgdpc_f - 2.3263*sqrt(dt_errorf);
-b_superior = lgdpc_f + 2.3263*sqrt(dt_errorf);
-figure(8);
-plot(lgdpc,'Color',[.7,.7,.7]);
+% ARIMA(12,2,12) Model (Gaussian Distribution):
+%  
+%                   Value      StandardError    TStatistic      PValue  
+%                 _________    _____________    __________    __________
+% 
+%     Constant            0             0            NaN             NaN
+%     AR{1}         0.86743      0.045858         18.916      8.4844e-80
+%     AR{5}        -0.11818      0.025366         -4.659      3.1778e-06
+%     AR{12}       -0.14753      0.029831        -4.9455       7.593e-07
+%     MA{1}         -1.5487      0.063809        -24.272      3.903e-130
+%     MA{2}         0.47326      0.073333         6.4535      1.0927e-10
+%     MA{6}         0.13419      0.023698         5.6624       1.493e-08
+%     MA{12}      -0.051558      0.010686        -4.8246      1.4025e-06
+%     Variance       0.7057      0.045856          15.39      1.9208e-53
+% Modelizando la estructura que existe en el lag 6, y corrigiendo la poca 
+% existe en el lag 12, conseguimos que todo sea significativo.
+%% Hacemos inferencia modelo 7
+[res7,varres7,logL7] = infer(estmodelo7,lgdpc); 
+resstd7 = res7/sqrt(estmodelo7.Variance);
+[h,p,jbstat,critval]=jbtest(resstd7,0.01) 
+% h=1 -> rechazo normalidad.
+figure(6);
+subplot(2,2,1);
+plot(resstd7); 
+title('Residuos estandarizados modelo 7');
+subplot(2,2,2);
+histogram(resstd7,20);
+title('Residuos Estandarizados modelo 7')
+subplot(2,2,3);
+autocorr(resstd7,20);
+subplot(2,2,4);
+parcorr(resstd7,20);
+% Si analizamos la ACF y PACF ya no existe ningún lag significativo. Por
+% tanto, estamos ante un residuo que sigue un proceso ruido blanco.
+%% Parámetros a destacar del modelo óptimo
+var_resid = var(res4)
+    % var_resid = 0.7324
+med_resid = mean(res4)
+    % med_resid = -0.0147
+%% Hacemos una predicción al 95% con el modelo 8
+% Para ello, hacemos una simulación por Monte Carlo mediante la función
+% simulate, usando las especificaciones del modelo 8.
+rng(1);
+[lgdpc_f,E,V] = simulate(estmodelo7,2,'NumPaths',1e06,'Y0',lgdpc);
+
+lower = prctile(lgdpc_f,2.5,2);
+upper = prctile(lgdpc_f,97.5,2);
+mn = mean(lgdpc_f,2);
+n = length(lgdpc)
+figure
+plot(lgdpc,'Color',[.7,.7,.7])
 hold on
-h1 = plot(291:292,b_inferior,'r:','LineWidth',2);
-plot(291:292,b_superior,'r:','LineWidth',2)
-h2 = plot(291:292,lgdpc_f,'k','LineWidth',2); %predicción
-legend([h1 h2],'Intervalo al 99% de confianza','Predicción puntual',...
-	     'Location','NorthWest')
-title('Predicción del PIB PC de EEUU a cierre de año')
+h1 = plot(n+1:n+2,lower,'r:','LineWidth',2);
+plot(n+1:n+2,upper,'r:','LineWidth',2)
+h2 = plot(n+1:n+2,mn,'k','LineWidth',2);
+
+legend([h1 h2],'Intervalo de confianza al 95%','Media simulación',...
+			'Location','NorthWest')
+title('Predicción del lGDPC')
 hold off
+%% 
+figure;
+h0 = plot(lgdpc,'Color',[.7,.7,.7])
+hold on
+h1 = plot(n+1:n+2,lgdpc_f(:,1:1000),'LineWidth',0.5);
+h2 = plot(n+1:n+2,mn,'k','LineWidth',1.5);
 
-%% Calculamos la probabilidad de que el crecimiento del PIB sea menor que
-% el 1% en el tercer trimestre.
-% Primero, declaramos la media y la desviación tipica de la variación de
-% lgdpc. Esto es la primera diferencia de lgdpc
+legend([h0; h1; h2],'Serie lDGPC','1000 simulaciones para lGDPC en 3ºT y 4ºT','Media Simulación',...
+			'Location','NorthWest')
+title('Simulaciones para el valor lGDPC en 3ºT y 4ºT')
+xlabel('Observaciones')
+ylabel('lGDPC')
+hold off
+%% Valores de la predicción a destacar
+var_resf1 = var(E(1,:));
+% var_resf1 =  0.7071
+var_resf2 = var(E(2,:));
+% var_resf2 = 0.7067
+med_ref1 = mean(E(1,:));
+% med_resf1 = 6.9352e-04
+med_resf2 = mean(E(2,:));
+% med_resf2 = -9.3722e-04
 
-media_est = lgdpc_f(2,1) - lgdpc_f(1,1);
-std_est =  dt_errorf(2,1) + dt_errorf(1,1);
+% El residuo de la predicción mantiene las propiedades de ruido blanco.
 
-% Aplicamos la normalización:
-X = (0.01 - media_est) / std_est;
+%% Graficamos los primeros 1000 residuos de la predicción.
+figure;
+subplot(2,1,1)
+plot(E(1,1:1000))
+title('Primeros 1000 residuos simulados de la predicción del 3ºTrimestre')
+xlabel('Número de simulación')
+ylabel('Innovaciones')
+subplot(2,1,2)
+plot(E(2,1:1000))
+title('Primeros 1000 residuos simulados de la predicción del 4ºTrimestre')
+xlabel('Número de simulación')
+ylabel('Innovaciones')
+%% Sacamos la distribución empirica de la predicción
+% Para la primera estimación
+med_lgdpc_f1 = mean(lgdpc_f(1,:));
+var_lgdpc_f1 = var(lgdpc_f(1,:));
+% Para la segunda estimación
+med_lgdpc_f2 = mean(lgdpc_f(2,:));
+var_lgdpc_f2 = var(lgdpc_f(2,:));
+% Covarianza 
+cov_lgdpc_f = cov(lgdpc_f(1,:),lgdpc_f(2,:));
+
+%% Calculamos la probabilidad.
+% El modelo esta declarado sobre el logaritmo del GDPC. Como nos
+% interesamos por el rendimiento, necesitamos establecer como se distribuye
+% la variación logarítmica del GDPC para el último trimestre del año. 
+
+% Declaramos la media de la variación logarítmica del GDPC para el cuarto
+%trimestre del 2019.
+
+media_est = med_lgdpc_f1 - med_lgdpc_f2;
+
+% Declaramos la varianza de la variación logarítmica del GDPC para
+% el cuatro trimestre del 2019.
+var_est =  var_lgdpc_f1 + var_lgdpc_f2 + 2*cov_lgdpc_f(1,2);
+
+% Aplicamos una normalización:
+X = (1 - media_est) / sqrt(var_est);
+% X = 0.8166
 
 % Calculamos la probabilidad asociada a X
 P = normpdf(X)
-
+% P =   0.2858
