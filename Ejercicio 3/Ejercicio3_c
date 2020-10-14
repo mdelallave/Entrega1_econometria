@@ -289,7 +289,7 @@ estmodelo7 =estimate(modelo7,lgdpc);
 %     MA{12}      -0.051558      0.010686        -4.8246      1.4025e-06
 %     Variance       0.7057      0.045856          15.39      1.9208e-53
 % Modelizando la estructura que existe en el lag 6, y corrigiendo la poca 
-% existe en el lag 12, conseguimos que todo sea significativo.
+% existente en el lag 12, conseguimos que todo sea significativo.
 %% Hacemos inferencia modelo 7
 [res7,varres7,logL7] = infer(estmodelo7,lgdpc); 
 resstd7 = res7/sqrt(estmodelo7.Variance);
@@ -309,39 +309,27 @@ parcorr(resstd7,20);
 % Si analizamos la ACF y PACF ya no existe ningún lag significativo. Por
 % tanto, estamos ante un residuo que sigue un proceso ruido blanco.
 %% Parámetros a destacar del modelo óptimo
-var_resid = var(res4)
-    % var_resid = 0.7324
-med_resid = mean(res4)
-    % med_resid = -0.0147
-%% Hacemos una predicción al 95% con el modelo 8
+var_resid = var(res7)
+    % var_resid = 0.7063
+med_resid = mean(res7)
+    % med_resid = -0.0427
+%% Hacemos una predicción al 95% con el modelo 7
 % Para ello, hacemos una simulación por Monte Carlo mediante la función
 % simulate, usando las especificaciones del modelo 8.
 rng(1);
 [lgdpc_f,E,V] = simulate(estmodelo7,2,'NumPaths',1e06,'Y0',lgdpc);
 
-lower = prctile(lgdpc_f,2.5,2);
-upper = prctile(lgdpc_f,97.5,2);
+%% Gráfico simulaciones para 3ºT y 4ºT
+n = length(lgdpc);
 mn = mean(lgdpc_f,2);
-n = length(lgdpc)
-figure
-plot(lgdpc,'Color',[.7,.7,.7])
-hold on
-h1 = plot(n+1:n+2,lower,'r:','LineWidth',2);
-plot(n+1:n+2,upper,'r:','LineWidth',2)
-h2 = plot(n+1:n+2,mn,'k','LineWidth',2);
-
-legend([h1 h2],'Intervalo de confianza al 95%','Media simulación',...
-			'Location','NorthWest')
-title('Predicción del lGDPC')
-hold off
-%% 
 figure;
 h0 = plot(lgdpc,'Color',[.7,.7,.7])
 hold on
 h1 = plot(n+1:n+2,lgdpc_f(:,1:1000),'LineWidth',0.5);
 h2 = plot(n+1:n+2,mn,'k','LineWidth',1.5);
 
-legend([h0; h1; h2],'Serie lDGPC','1000 simulaciones para lGDPC en 3ºT y 4ºT','Media Simulación',...
+legend([h0; h1; h2],'Serie lDGPC',...
+    '1000 simulaciones para lGDPC en 3ºT y 4ºT','Media Simulación',...
 			'Location','NorthWest')
 title('Simulaciones para el valor lGDPC en 3ºT y 4ºT')
 xlabel('Observaciones')
@@ -389,16 +377,17 @@ cov_lgdpc_f = cov(lgdpc_f(1,:),lgdpc_f(2,:));
 % Declaramos la media de la variación logarítmica del GDPC para el cuarto
 %trimestre del 2019.
 
-media_est = med_lgdpc_f1 - med_lgdpc_f2;
-
+media_est = med_lgdpc_f2 - med_lgdpc_f1;
+    %med_est = 1.1039
+    
 % Declaramos la varianza de la variación logarítmica del GDPC para
 % el cuatro trimestre del 2019.
 var_est =  var_lgdpc_f1 + var_lgdpc_f2 + 2*cov_lgdpc_f(1,2);
-
+    %var_est = 4.506
 % Aplicamos una normalización:
 X = (1 - media_est) / sqrt(var_est);
-% X = 0.8166
+% X = -0.0490
 
 % Calculamos la probabilidad asociada a X
 P = normpdf(X)
-% P =   0.2858
+% P =   0.3985
