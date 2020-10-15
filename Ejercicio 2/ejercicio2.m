@@ -231,6 +231,24 @@ lags_significativos_ma
 % Crude. Eliminamos los lags no significativos            
 estimacion(3) = estimate(arima('ARlags',[1,4,8],...
                 'MAlags',[1,2,4,8],'D',1),ldata(:,3)); 
+            
+% y comprobamos que los residuos se comportan como ruido blanco.            
+for i = 1:length(estimacion)
+    figure(9+i);
+    subplot(2,2,1);
+    plot(resstd(:,i));
+    title(['Residuos estandarizados de', nombre(i)]);
+    
+    subplot(2,2,2);
+    histogram(resstd(:,i),20);
+    title(['Residuos estandarizados de ', nombre(i)]);
+    
+    subplot(2,2,3);
+    autocorr(resstd(:,i),20);
+    
+    subplot(2,2,4);
+    parcorr(resstd(:,i),20);
+end
 
 for i = 1:length(estimacion)
     significativos_ma(:,i) = abs(autocorr(resstd(:,i))) > banda_confianza;
@@ -269,7 +287,7 @@ end
 % Gráfica
 M = round(1.5*N); % Puntos a mostrar
 for i = 1:length(estimacion)
-    figure(10);
+    figure(13);
     subplot(3,1,i);
     plot(ldata(end-M:end,i),'Color',[.7,.7,.7]);
     hold on
@@ -295,7 +313,7 @@ for i = 1:length(estimacion)
 end
 
 for i = 1:length(estimacion)
-    figure(11);
+    figure(14);
     subplot(3,1,i);
     plot(ldata(end-M:end,i),'Color',[.7,.7,.7]);
     hold on
@@ -313,7 +331,7 @@ end
 %% Comparación valores reales
 ldata_all = 100*log(data);
 for i = 1:length(estimacion)
-    figure(12);
+    figure(15);
     subplot(3,1,i);
     plot(ldata_all(end-M-N:end,i));
     title(['Valor real del ' nombre(i)])
@@ -324,7 +342,7 @@ err_rel = zeros(N,length(estimacion));
 for i = 1:length(estimacion)
     err_rel(:,i) = 100*abs(ldata_f(:,i) - ldata_all(end-N+1:end,i))./...
         abs(ldata_all(end-N+1:end,i)) ;
-    figure(13);
+    figure(16);
     subplot(3,1,i);
     plot(1:N,err_rel(:,i))
     title(['Error relativo del ' nombre(i) 'en %'])
@@ -437,7 +455,7 @@ end
 % Gráfica
 M = round(1.5*N); % Puntos a mostrar
 for i = 1:length(estimacion)
-    figure(14);
+    figure(17);
     subplot(3,1,i);
     plot(dataN(end-M:end,i),'Color',[.7,.7,.7]);
     hold on
@@ -454,7 +472,7 @@ end
 
 %% Comparación valores reales
 for i = 1:length(estimacion)
-    figure(15);
+    figure(18);
     subplot(3,1,i);
     plot(data(end-M-N:end,i));
     title(['Valor real del ' nombre(i)])
