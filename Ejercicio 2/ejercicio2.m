@@ -430,8 +430,8 @@ for i = 1:length(estimacion)
             ar_parameters(:,i)' * (log(data_f(j-max_lags+1:j,i)) - ...
             log(data_f(j-max_lags:j-1,i))) - ma_parameters(:,i)' * ...
             eps_total(end-N-2*max_lags+j:end-N-max_lags+j-1,i)))+1/2e4*var(i));
-        b_inferior_precios(j-max_lags,i) = data_f(j+1,i) - Z*sqrt(var(i));
-        b_superior_precios(j-max_lags,i) = data_f(j+1,i) + Z*sqrt(var(i));
+        b_inferior_precios(j-max_lags,i) = data_f(j+1,i) - Z*sqrt(var(i)/1e4);
+        b_superior_precios(j-max_lags,i) = data_f(j+1,i) + Z*sqrt(var(i)/1e4);
     end
 end
 % Gráfica
