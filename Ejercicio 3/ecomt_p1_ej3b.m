@@ -118,47 +118,45 @@ subplot(2,2,3);
 autocorr(resstd2,16);
 subplot(2,2,4);
 parcorr(resstd2,16);
-% Nos encontramos que el lag 2 y 10 muestran estructura, ya que se encuentra
-% fuera de las bandas.
+% Nos encontramos que el lag 10 muestran estructura, ya que se encuentra
+% fuera de las bandas. 
 %% Modelo 3
-modelo3=arima('Constant',0,'ARLags',[2,4,5,10],'MALags',[2,4,5,10,12],'D',1);
+modelo3=arima('Constant',0,'ARLags',[4,5,10],'MALags',[4,5,10,12],'D',1);
 estmodelo3=estimate(modelo3,libex); 
 
-%     ARIMA(10,1,12) Model (Gaussian Distribution):
+%  ARIMA(10,1,12) Model (Gaussian Distribution):
 %  
 %                   Value      StandardError    TStatistic      PValue  
 %                 _________    _____________    __________    __________
 % 
 %     Constant            0             0            NaN             NaN
-%     AR{2}        -0.16537      0.037335        -4.4292      9.4584e-06
-%     AR{4}       -0.083859      0.031568        -2.6565       0.0078963
-%     AR{5}         -0.3431       0.12648        -2.7127       0.0066745
-%     AR{10}        0.50662       0.11874         4.2666      1.9845e-05
-%     MA{2}         0.12919      0.043082         2.9987       0.0027114
-%     MA{4}        0.030318      0.034955        0.86735         0.38575
-%     MA{5}         0.28807       0.12177         2.3657        0.017998
-%     MA{10}       -0.56656       0.11272        -5.0261      5.0064e-07
-%     MA{12}      -0.025487      0.022397         -1.138         0.25514
-%     Variance       1.4089      0.026061         54.064               0
+%     AR{4}        -0.20214      0.066731        -3.0292       0.0024517
+%     AR{5}        -0.49088       0.14727        -3.3333      0.00085827
+%     AR{10}        0.21739       0.13828         1.5722         0.11591
+%     MA{4}         0.17407      0.068263           2.55        0.010773
+%     MA{5}         0.41753       0.14688         2.8426       0.0044742
+%     MA{10}       -0.28372       0.13335        -2.1277        0.033364
+%     MA{12}      -0.068092      0.018238        -3.7335      0.00018886
+%     Variance       1.4159      0.027992         50.582               0
 %
-% MA(4) y el MA(12) no son significativos al 5%.
+% AR(10) no son significativos al 5%.
 %% Modelo Definitivo
-modelo4 = arima('Constant',0,'ARLags',[2,4,5,10],'MALags',[5,10],'D',1);
+modelo4 = arima('Constant',0,'ARLags',[4,5],'MALags',[4,5,10,12],'D',1);
 estmodelo4=estimate(modelo4,libex); 
 
-% ARIMA(10,1,10) Model (Gaussian Distribution):
+%  ARIMA(5,1,12) Model (Gaussian Distribution):
 %  
-%                   Value      StandardError    TStatistic      PValue  
-%                 _________    _____________    __________    __________
+%                  Value      StandardError    TStatistic      PValue  
+%                 ________    _____________    __________    __________
 % 
-%     Constant            0             0            NaN             NaN
-%     AR{2}        -0.06927      0.015268        -4.5369      5.7087e-06
-%     AR{4}       -0.047275      0.015109         -3.129       0.0017539
-%     AR{5}        -0.30971       0.12732        -2.4325        0.014996
-%     AR{10}        0.50462       0.12175         4.1447       3.402e-05
-%     MA{5}         0.24658       0.12197         2.0217        0.043208
-%     MA{10}       -0.55782       0.11364        -4.9086      9.1715e-07
-%     Variance       1.4166      0.025066         56.516               0
+%     Constant           0             0            NaN             NaN
+%     AR{4}       -0.18211      0.058309        -3.1232       0.0017893
+%     AR{5}       -0.71431      0.053769        -13.285      2.8405e-40
+%     MA{4}        0.15876      0.060144         2.6397       0.0082989
+%     MA{5}         0.6403       0.05951          10.76      5.3401e-27
+%     MA{10}      -0.06848      0.023412         -2.925       0.0034449
+%     MA{12}      -0.06214      0.017157        -3.6219      0.00029242
+%     Variance      1.4167      0.027528         51.466               0
 %
 % Todos los parámetros ahora vuelves a ser significativos al 5%.
 %% Hacemos inferencia con el modelo 4
@@ -178,34 +176,41 @@ parcorr(resstd4,20);
 % que no es significativa
 
 %% Variable impulso
-dummyImp = zeros(1569,1);
+dummyImp = zeros(1574,1);
 dummyImp(958) = 1;
 
 %% Modelo Definitivo con impulso
 estmodelo_imp = estimate(modelo4,libex,'X', dummyImp); 
 
-%   ARIMAX(10,1,10) Model (Gaussian Distribution):
+% ARIMAX(5,1,12) Model (Gaussian Distribution):
 %  
 %                   Value      StandardError    TStatistic      PValue  
 %                 _________    _____________    __________    __________
 % 
 %     Constant            0             0            NaN             NaN
-%     AR{2}       -0.068329      0.015445        -4.4239      9.6932e-06
-%     AR{4}       -0.046697      0.015511        -3.0105       0.0026079
-%     AR{5}        -0.33073        0.1315         -2.515        0.011902
-%     AR{10}        0.47496       0.12715         3.7354      0.00018744
-%     MA{5}          0.2651       0.12624            2.1        0.035729
-%     MA{10}       -0.52913       0.11891        -4.4496      8.6011e-06
-%     Beta(1)       0.94662       0.76366         1.2396         0.21513
-%     Variance       1.4155      0.025156         56.269               0
-%
-[res_imp,varres_imp,logL_imp] = infer(estmodelo_imp,libex); %inferencia sobre el modelo.
-resstd_imp = res_imp/sqrt(estmodelo_imp.Variance);
+%     AR{4}        -0.39601      0.090914        -4.3559      1.3255e-05
+%     AR{5}         0.36551      0.089973         4.0624      4.8572e-05
+%     MA{4}         0.35387       0.08632         4.0996      4.1391e-05
+%     MA{5}        -0.45351      0.093632        -4.8435      1.2755e-06
+%     MA{10}       0.010118      0.021375        0.47334         0.63597
+%     MA{12}      -0.043535      0.019912        -2.1864        0.028788
+%     Beta(1)        1.8546       0.52268         3.5482       0.0003879
+% El MA(10) no es significativo al 5%. (Al hacer inferencia con el modelo
+% resultante, el lag 17 muestra estructura)
+%% Modelo 
+modelo5 = arima('Constant',0,'ARLags',[4,5,17],'MALags',[4,5,12,17],'D',1);
+estmodelo5=estimate(modelo5,libex); 
+% Modelo optimo
+estmodelo_imp2 = estimate(modelo5,libex,'X', dummyImp); 
+
+% Inferencia con el modelo optimo
+[res_imp2,varres_imp2,logL_imp2] = infer(estmodelo_imp2,libex); %inferencia sobre el modelo.
+resstd_imp2 = res_imp2/sqrt(estmodelo_imp2.Variance);
 figure;
 subplot(1,2,1);
-autocorr(resstd_imp,20);
+autocorr(resstd_imp2,20);
 subplot(1,2,2);
-parcorr(resstd_imp,20);
+parcorr(resstd_imp2,20);
 
 % Podemos comprobar que el  coeficiente asociado a la variable instrumental
 % NO es significativo, con lo que nos quedamos con eL modelo anterior
